@@ -1,3 +1,7 @@
+mod bindings;
+
+use crate::bindings::ipopt_bindings;
+
 fn main() {
-    println!("Hello, world!");
+    println!("hi");
 }
