@@ -1,6 +1,6 @@
-mod bindings;
-
-use crate::bindings::ipopt_bindings;
+mod bindings {
+    mod ipopt;
+}
 
 fn main() {
     println!("hi");

@@ -231,5 +231,4 @@ pub mod ipopt_bindings {
             compl_g: *mut ipnumber,
         ) -> bool;
     }
-
-}   
+}
