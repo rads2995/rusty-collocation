@@ -3,7 +3,7 @@
     non_camel_case_types
 )]
 
-pub mod ipopt_bindings {
+pub mod ipopt {
 
     /// A pointer for anything that is to be passed between the called and individual callback function
     pub type UserDataPtr = *mut core::ffi::c_void;
@@ -12,15 +12,16 @@ pub mod ipopt_bindings {
     pub type ipindex = core::ffi::c_int;
 
     // Type for all number
-    pub type ipnumber = core::ffi::c_float;
+    pub type ipnumber = core::ffi::c_double;
 
     /// Pointer to an Ipopt Problem
     pub type IpoptProblem = *mut IpoptProblemInfo;
 
-    // Structure collecting all information about the problem definition and solve statistics etc."]
+    // Structure collecting all information about the problem definition and solve statistics etc
     #[repr(C)]
     pub struct IpoptProblemInfo {
-        _unused: [u8; 0],
+        _data: [u8; 0],
+        _marker: core::marker::PhantomData<(*mut u8, core::marker::PhantomPinned)>,
     }
 
     /// Return codes for the Optimize call for an application
