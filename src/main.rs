@@ -1,7 +1,6 @@
 mod bindings {
     pub mod ipopt;
 }
-
 use crate::bindings::ipopt::*;
 
 #[unsafe(no_mangle)]
@@ -12,6 +11,10 @@ extern "C" fn Eval_F_CB_impl(
     obj_value: *mut ipopt::ipnumber,
     user_data: ipopt::UserDataPtr,
 ) -> bool {
+    
+    // Should create mutable slices here and then maybe pass them to an implementation method?
+    let x_slice: &[f64] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
+
     true
 }
 
