@@ -4,7 +4,8 @@ mod bindings {
 
 use crate::bindings::ipopt::*;
 
-unsafe extern "C" fn Eval_F_CB_impl(
+#[unsafe(no_mangle)]
+extern "C" fn Eval_F_CB_impl(
     n: ipopt::ipindex,
     x: *mut ipopt::ipnumber,
     new_x: bool,
@@ -14,7 +15,8 @@ unsafe extern "C" fn Eval_F_CB_impl(
     true
 }
 
-unsafe extern "C" fn Eval_G_CB_impl(
+#[unsafe(no_mangle)]
+extern "C" fn Eval_G_CB_impl(
     n: ipopt::ipindex,
     x: *mut ipopt::ipnumber,
     new_x: bool,
@@ -25,7 +27,8 @@ unsafe extern "C" fn Eval_G_CB_impl(
     true
 }
 
-unsafe extern "C" fn Eval_Grad_F_CB_impl(
+#[unsafe(no_mangle)]
+extern "C" fn Eval_Grad_F_CB_impl(
     n: ipopt::ipindex,
     x: *mut ipopt::ipnumber,
     new_x: bool,
@@ -35,7 +38,8 @@ unsafe extern "C" fn Eval_Grad_F_CB_impl(
     true
 }
 
-unsafe extern "C" fn Eval_Jac_G_CB_impl(
+#[unsafe(no_mangle)]
+extern "C" fn Eval_Jac_G_CB_impl(
     n: ipopt::ipindex,
     x: *mut ipopt::ipnumber,
     new_x: bool,
@@ -49,7 +53,8 @@ unsafe extern "C" fn Eval_Jac_G_CB_impl(
     true
 }
 
-unsafe extern "C" fn Eval_H_CB_impl(
+#[unsafe(no_mangle)]
+extern "C" fn Eval_H_CB_impl(
     n: ipopt::ipindex,
     x: *mut ipopt::ipnumber,
     new_x: bool,
@@ -77,6 +82,8 @@ fn main() {
     let mut x_U: Vec<f64> = vec![0.0];  // Upper bounds on x
     let mut g_L: Vec<f64> = vec![0.0];  // Lower bounds on g
     let mut g_U: Vec<f64> = vec![0.0];  // Upper bounds on g
+
+    let callback: ipopt::Eval_F_CB = Some(Eval_F_CB_impl);
 
     unsafe {
         ipopt::CreateIpoptProblem(
