@@ -43,6 +43,5 @@ RUN ldconfig
 
 # Run Rust application
 WORKDIR /usr/local/src
-RUN git clone https://github.com/rads2995/rusty-interior.git
-WORKDIR /usr/local/src/rusty-interior
+COPY . .
 RUN cargo build

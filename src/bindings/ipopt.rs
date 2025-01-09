@@ -1,6 +1,6 @@
 #[allow(
-    dead_code,
-    non_camel_case_types
+    non_camel_case_types,
+    unused
 )]
 
 pub mod ipopt {
