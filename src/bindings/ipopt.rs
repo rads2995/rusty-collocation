@@ -155,7 +155,7 @@ pub mod ipopt {
         /// Function for adding an Integer option.\n\n @return false, if the option  could not be set (e.g., if keyword is unknown)\n@"]
         pub unsafe fn AddIpoptIntOption(
             ipopt_problem: IpoptProblem,
-            keyword: *mut ::std::os::raw::c_char,
+            keyword: *mut core::ffi::c_char,
             val: ipindex,
         ) -> bool;
 
