@@ -3,6 +3,8 @@ mod bindings {
     pub mod ipopt;
 }
 
+use std::os::linux::raw::stat;
+
 use crate::bindings::ipopt::*;
 
 #[unsafe(no_mangle)]
@@ -15,8 +17,8 @@ extern "C" fn eval_f(
 ) -> bool {
     
     assert!(n == 4);
-    assert!(!x.is_null());
-    assert!(!obj_value.is_null());
+    // assert!(!x.is_null());
+    // assert!(!obj_value.is_null());
     
     // Throw away unused variables
     let _ = n;
@@ -44,8 +46,8 @@ extern "C" fn eval_g(
     
     assert!(n == 4);
     assert!(m == 2);
-    assert!(!x.is_null());
-    assert!(!g.is_null());
+    // assert!(!x.is_null());
+    // assert!(!g.is_null());
 
     // Throw away unused variables
     let _ = n;
@@ -72,8 +74,8 @@ extern "C" fn eval_grad_f(
 ) -> bool {
     
     assert!(n == 4);
-    assert!(!x.is_null());
-    assert!(!grad_f.is_null());
+    // assert!(!x.is_null());
+    // assert!(!grad_f.is_null());
 
     // Throw away unused variables
     let _ = new_x;
@@ -105,9 +107,9 @@ extern "C" fn eval_jac_g(
     
     assert!(n == 4);
     assert!(m == 2);
-    assert!(!x.is_null());
-    assert!(!iRow.is_null());
-    assert!(!jCol.is_null());
+    // assert!(!x.is_null());
+    // assert!(!iRow.is_null());
+    // assert!(!jCol.is_null());
     
     // Throw away unused variables
     let _ = user_data;
@@ -174,12 +176,12 @@ extern "C" fn eval_h(
     user_data: ipopt::UserDataPtr,
 ) -> bool {
     
-    assert!(n == 4);
-    assert!(m == 2);
-    assert!(!x.is_null());
-    assert!(!lambda.is_null());
-    assert!(!iRow.is_null());
-    assert!(!jCol.is_null());
+    // assert!(n == 4);
+    // assert!(m == 2);
+    // assert!(!x.is_null());
+    // assert!(!lambda.is_null());
+    // assert!(!iRow.is_null());
+    // assert!(!jCol.is_null());
     
     if values.is_null() {
 
@@ -277,7 +279,10 @@ fn main() {
     // Set the indexing style to C-style 
     let index_style: i32 = 0;
 
-    let mut obj: f64 = 0.0;
+    let mut obj: [f64; 1] = [0.0];
+    let mut mult_g: [f64; 2] = [0.0, 0.0];
+    let mut mult_x_L: [f64; 4] = [0.0, 0.0, 0.0, 0.0];
+    let mut mult_x_U: [f64; 4] = [0.0, 0.0, 0.0, 0.0];
 
     // Set the initial point and the values
     let mut x: [f64; 4] = [1.0, 5.0, 5.0, 1.0];
@@ -289,6 +294,8 @@ fn main() {
     
     let output_file_msg: std::ffi::CString = std::ffi::CString::new("output_file").unwrap();
     let output_file_val: std::ffi::CString = std::ffi::CString::new("ipopt.out").unwrap();
+        
+    let mut user_data: Box<ipopt::IpoptProblemInfo> = Box::new(ipopt::IpoptProblemInfo::new());
     
     unsafe {
         let nlp: ipopt::IpoptProblem = ipopt::CreateIpoptProblem(
@@ -310,16 +317,21 @@ fn main() {
 
         ipopt::AddIpoptNumOption(nlp, tol_msg.into_raw(), 3.82e-6);
         ipopt::AddIpoptStrOption(nlp, mu_strategy_msg.into_raw(), mu_strategy_val.into_raw());
-        ipopt::AddIpoptStrOption(nlp, output_file_msg.into_raw(), output_file_val.into_raw());
-    
-    //     ipopt::IpoptSolve(nlp, 
-    //         x.as_mut_ptr(), 
-    //         core::ptr::null_mut(),
-    //         obj as *mut f64, 
-    //         mult_g, 
-    //         mult_x_L, 
-    //         mult_x_U, 
-    //         user_data);
+        ipopt::AddIpoptStrOption(nlp, output_file_msg.into_raw(), output_file_val.into_raw());                 
+
+        let status: i32 = ipopt::IpoptSolve(
+            nlp, 
+            x.as_mut_ptr(), 
+            core::ptr::null_mut(),
+            obj.as_mut_ptr(), 
+            mult_g.as_mut_ptr(), 
+            mult_x_L.as_mut_ptr(), 
+            mult_x_U.as_mut_ptr(),
+            &mut *user_data
+        );
+        
+        println!("{:?}", status)
     
     } 
+
 }

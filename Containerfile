@@ -44,4 +44,4 @@ RUN ldconfig
 # Run Rust application
 WORKDIR /usr/local/src
 COPY . .
-RUN cargo build
+RUN cargo run

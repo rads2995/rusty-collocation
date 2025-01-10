@@ -6,7 +6,7 @@
 pub mod ipopt {
 
     /// A pointer for anything that is to be passed between the called and individual callback function
-    pub type UserDataPtr = *mut core::ffi::c_void;
+    pub type UserDataPtr = *mut IpoptProblemInfo;
     
     // Type of all indices of vectors, matrices, etc. (since 3.14.0)
     pub type ipindex = core::ffi::c_int;
@@ -22,6 +22,15 @@ pub mod ipopt {
     pub struct IpoptProblemInfo {
         _data: [u8; 0],
         _marker: core::marker::PhantomData<(*mut u8, core::marker::PhantomPinned)>,
+    }
+
+    impl IpoptProblemInfo {
+        pub fn new() -> Self {
+            IpoptProblemInfo {
+                _data: [],
+                _marker: core::marker::PhantomData,
+            }
+        }
     }
 
     /// Return codes for the Optimize call for an application
