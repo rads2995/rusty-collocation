@@ -176,8 +176,8 @@ extern "C" fn eval_h(
     user_data: ipopt::UserDataPtr,
 ) -> bool {
     
-    // assert!(n == 4);
-    // assert!(m == 2);
+    assert!(n == 4);
+    assert!(m == 2);
     // assert!(!x.is_null());
     // assert!(!lambda.is_null());
     // assert!(!iRow.is_null());
@@ -295,7 +295,7 @@ fn main() {
     let output_file_msg: std::ffi::CString = std::ffi::CString::new("output_file").unwrap();
     let output_file_val: std::ffi::CString = std::ffi::CString::new("ipopt.out").unwrap();
         
-    let mut user_data: Box<ipopt::IpoptProblemInfo> = Box::new(ipopt::IpoptProblemInfo::new());
+    let mut user_data: Box<ipopt::IpoptProblemInfo> = Box::new(ipopt::IpoptProblemInfo::default());
     
     unsafe {
         let nlp: ipopt::IpoptProblem = ipopt::CreateIpoptProblem(
@@ -330,8 +330,22 @@ fn main() {
             &mut *user_data
         );
         
-        println!("{:?}", status)
-    
-    } 
+        match ipopt::IpoptReturnStatus::try_from(status) {
+            Ok(enum_value) => {
+                match enum_value {
+                    ipopt::IpoptReturnStatus::SolveSucceeded => {
+                        println!("Solve succeded!");
+                    }
 
+                    _ => println!("Other status: {:?}", enum_value),
+                }
+            }
+
+            Err(_) => {
+                println!("Unknown return status from IPOPT: {}", status)
+            }
+        }
+        
+        ipopt::FreeIpoptProblem(nlp);
+    } 
 }
