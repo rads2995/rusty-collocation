@@ -1,4 +1,3 @@
-
 mod bindings {
     pub mod ipopt;
 }
@@ -21,7 +20,7 @@ extern "C" fn eval_f(
     assert!(n == 4);
     // assert!(!x.is_null());
     // assert!(!obj_value.is_null());
-    
+
     // Throw away unused variables
     let _ = n;
     let _ = new_x;
@@ -30,7 +29,7 @@ extern "C" fn eval_f(
     let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
 
     unsafe {
-        *obj_value = x_slice[0] * x_slice[3];
+        *obj_value = x_slice[0] * x_slice[3] * (x_slice[0] + x_slice[1] + x_slice[2]) + x_slice[2];
     }
 
     true
@@ -289,16 +288,8 @@ fn main() {
     // Set the initial point and the values
     let mut x: [f64; 4] = [1.0, 5.0, 5.0, 1.0];
 
-    let tol_msg: std::ffi::CString = std::ffi::CString::new("tol").unwrap();
-        
-    let mu_strategy_msg: std::ffi::CString = std::ffi::CString::new("mu_strategy").unwrap();
-    let mu_strategy_val: std::ffi::CString = std::ffi::CString::new("adaptive").unwrap();
-    
-    let output_file_msg: std::ffi::CString = std::ffi::CString::new("output_file").unwrap();
-    let output_file_val: std::ffi::CString = std::ffi::CString::new("ipopt.out").unwrap();
-        
-    let mut user_data: Box<ipopt::IpoptProblemInfo> = Box::new(ipopt::IpoptProblemInfo::default());
-    
+    let mut user_data: ipopt::IpoptProblemInfo = ipopt::IpoptProblemInfo::default();
+
     unsafe {
         let nlp: ipopt::IpoptProblem = ipopt::CreateIpoptProblem(
             n as ipopt::ipindex, 
@@ -317,9 +308,9 @@ fn main() {
             Some(eval_h)
         );
 
-        ipopt::AddIpoptNumOption(nlp, tol_msg.into_raw(), 3.82e-6);
-        ipopt::AddIpoptStrOption(nlp, mu_strategy_msg.into_raw(), mu_strategy_val.into_raw());
-        ipopt::AddIpoptStrOption(nlp, output_file_msg.into_raw(), output_file_val.into_raw());                 
+        ipopt::AddIpoptNumOption(nlp, c"tol".as_ptr() as *const i8, 3.82e-6);
+        ipopt::AddIpoptStrOption(nlp, c"mu_strategy".as_ptr() as *const i8, c"adaptive".as_ptr() as *const i8);
+        ipopt::AddIpoptStrOption(nlp, c"output_file".as_ptr() as *const i8, c"ipopt.out".as_ptr() as *const i8);                 
 
         let status: i32 = ipopt::IpoptSolve(
             nlp, 
@@ -329,7 +320,7 @@ fn main() {
             mult_g.as_mut_ptr(), 
             mult_x_L.as_mut_ptr(), 
             mult_x_U.as_mut_ptr(),
-            &mut *user_data
+            &mut user_data as *mut ipopt::IpoptProblemInfo
         );
         
         match ipopt::IpoptReturnStatus::try_from(status) {

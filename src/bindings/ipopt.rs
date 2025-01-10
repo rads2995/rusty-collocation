@@ -78,7 +78,7 @@ pub mod ipopt {
        InternalError                    = -199
     } 
     
-    impl TryFrom<i32> for IpoptReturnStatus {
+    impl core::convert::TryFrom<i32> for IpoptReturnStatus {
         type Error = ();
 
         fn try_from(code: i32) -> Result<Self, Self::Error> {
@@ -178,7 +178,7 @@ pub mod ipopt {
     /// Return value should be set to false if there was a problem doing the evaluation.
     /// 
     /// See also `Ipopt::TNLP::eval_h`.
-    pub type Eval_H_CB = ::std::option::Option<
+    pub type Eval_H_CB = core::option::Option<
         unsafe extern "C" fn(
             n: ipindex,
             x: *mut ipnumber,
@@ -204,7 +204,7 @@ pub mod ipopt {
     /// If this method returns false, Ipopt will terminate the optimization.
     /// 
     /// See also `Ipopt::TNLP::intermediate_callback`.
-    pub type Intermediate_CB = ::std::option::Option<
+    pub type Intermediate_CB = core::option::Option<
         unsafe extern "C" fn(
             alg_mod: ipindex,
             iter_count: ipindex,
@@ -268,8 +268,8 @@ pub mod ipopt {
         /// Return false, if the option could not be set (e.g., if keyword is unknown).
         pub unsafe fn AddIpoptStrOption(
             ipopt_problem: IpoptProblem,
-            keyword: *mut core::ffi::c_char,
-            val: *mut core::ffi::c_char,
+            keyword: *const core::ffi::c_char,
+            val: *const core::ffi::c_char,
         ) -> bool;
 
         /// Function for adding a Number option.
@@ -277,7 +277,7 @@ pub mod ipopt {
         /// Return false, if the option could not be set (e.g., if keyword is unknown).
         pub unsafe fn AddIpoptNumOption(
             ipopt_problem: IpoptProblem,
-            keyword: *mut core::ffi::c_char,
+            keyword: *const core::ffi::c_char,
             val: ipnumber,
         ) -> bool;
 
@@ -286,7 +286,7 @@ pub mod ipopt {
         /// Return false, if the option could not be set (e.g., if keyword is unknown).
         pub unsafe fn AddIpoptIntOption(
             ipopt_problem: IpoptProblem,
-            keyword: *mut core::ffi::c_char,
+            keyword: *const core::ffi::c_char,
             val: ipindex,
         ) -> bool;
 
@@ -295,7 +295,7 @@ pub mod ipopt {
         /// Return false, if there was a problem opening the file.
         pub unsafe fn OpenIpoptOutputFile(
             ipopt_problem: IpoptProblem,
-            file_name: *mut core::ffi::c_char,
+            file_name: *const core::ffi::c_char,
             print_level: core::ffi::c_int,
         ) -> bool;
         
