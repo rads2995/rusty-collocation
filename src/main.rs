@@ -3,7 +3,9 @@ mod bindings {
     pub mod ipopt;
 }
 
-use std::os::linux::raw::stat;
+mod helpers {
+    pub mod ipopt;
+}
 
 use crate::bindings::ipopt::*;
 
