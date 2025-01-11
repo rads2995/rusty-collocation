@@ -1,3 +1,6 @@
+use std::fs;
+use serde::Deserialize;
+
 mod bindings {
     pub mod ipopt;
 }
@@ -6,7 +9,23 @@ pub mod nlp;
 
 use crate::bindings::ipopt::*;
 
+#[derive(Deserialize)]
+struct Config {
+    ipopt: Ipopt,
+}
+
+#[derive(Deserialize)]
+struct Ipopt {
+    test: String,
+}
+
 fn main() {
+
+    let config_file: String = fs::read_to_string("config.toml").expect("Unable to read configuration file");
+
+    let config_data: Config = toml::from_str(&config_file).unwrap();
+
+    println!("{:?}", config_data.ipopt.test);
     
     // Define lower and upper bounds for decision variables
     let mut x_l: [f64; 4] = [1.0, 1.0, 1.0, 1.0];
