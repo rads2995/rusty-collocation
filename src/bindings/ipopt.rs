@@ -1,5 +1,7 @@
 #[allow(
     non_camel_case_types,
+    non_snake_case,
+    unused,
 )]
 
 pub mod ipopt {
@@ -399,7 +401,11 @@ pub mod ipopt {
     pub mod helper {
         
         use crate::bindings::ipopt::*;
+        use crate::nlp::*;
         
+        /// Implementation of callback function for evaluating the value of the objective function.
+        /// 
+        /// This function converts the objective function definition into something that IPOPT understands.
         #[unsafe(no_mangle)]
         pub extern "C" fn eval_f(
         n: ipopt::ipindex,
@@ -412,20 +418,24 @@ pub mod ipopt {
             assert!(!x.is_null());
             assert!(!obj_value.is_null());
 
-            // Throw away unused variables
-            let _ = n;
+            // These variables are not yet used
             let _ = new_x;
             let _ = user_data;
 
             let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
 
-            unsafe {
-                *obj_value = x_slice[0] * x_slice[3] * (x_slice[0] + x_slice[1] + x_slice[2]) + x_slice[2];
-            }
+            assert!(x_slice.len() == n.try_into().unwrap());
+            
+            let objective_value: ipopt::ipnumber = nlp::objective_function(x_slice);
+
+            unsafe { *obj_value = objective_value; }
 
             true
         }
 
+        /// Implementation of callback function for evaluating the value of the constraint functions.
+        /// 
+        /// This function converts the constraint functions definitions into something that IPOPT understands.
         #[unsafe(no_mangle)]
         pub extern "C" fn eval_g(
             n: ipopt::ipindex,
@@ -439,7 +449,7 @@ pub mod ipopt {
             assert!(!x.is_null());
             assert!(!g.is_null());
         
-            // Throw away unused variables
+            // These variables are not yet used
             let _ = n;
             let _ = m;
             let _ = new_x;
@@ -448,12 +458,17 @@ pub mod ipopt {
             let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
             let g_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(g, m.try_into().unwrap())};
         
-            g_slice[0] = x_slice[0] * x_slice[1] * x_slice[2] * x_slice[3]; 
-            g_slice[1] = x_slice[0] * x_slice[0] + x_slice[1] * x_slice[1] + x_slice[2] * x_slice[2] + x_slice[3] * x_slice[3];
+            assert!(x_slice.len() == n.try_into().unwrap());
+            assert!(g_slice.len() == m.try_into().unwrap());
+            
+            nlp::constraint_functions(x_slice, g_slice);
         
             true
         }
 
+        /// Implementation of callback function for evaluating the gradient of the objective function.
+        /// 
+        /// This function converts the gradient of the objective function definition into something that IPOPT understands.
         #[unsafe(no_mangle)]
         pub extern "C" fn eval_grad_f(
             n: ipopt::ipindex,
@@ -466,21 +481,24 @@ pub mod ipopt {
             assert!(!x.is_null());
             assert!(!grad_f.is_null());
         
-            // Throw away unused variables
+            // These variables are not yet used
             let _ = new_x;
             let _ = user_data;
             
             let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
             let grad_f_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(grad_f, n.try_into().unwrap())};
         
-            grad_f_slice[0] = x_slice[0] * x_slice[3] + x_slice[3] * (x_slice[0] + x_slice[1] + x_slice[2]);
-            grad_f_slice[1] = x_slice[0] * x_slice[3];
-            grad_f_slice[2] = x_slice[0] * x_slice[3] + 1.0;
-            grad_f_slice[3] = x_slice[0] * (x_slice[0] + x_slice[1] + x_slice[2]);  
-        
+            assert!(x_slice.len() == n.try_into().unwrap());
+            assert!(grad_f_slice.len() == n.try_into().unwrap());
+                        
+            nlp::gradient_objective_function(x_slice, grad_f_slice);
+
             true
         }
 
+        /// Implementation of callback function for evaluating the Jacobian of the constrant functions.
+        /// 
+        /// This function converts the Jacobian of the constrant functions definitions into something that IPOPT understands.
         #[unsafe(no_mangle)]
         pub extern "C" fn eval_jac_g(
             n: ipopt::ipindex,
@@ -497,6 +515,7 @@ pub mod ipopt {
             // Throw away unused variables
             let _ = user_data;
             let _ = new_x;
+            let _ = m;
         
             if values.is_null() {
 
@@ -506,28 +525,15 @@ pub mod ipopt {
                 assert!(!iRow.is_null());
                 assert!(!jCol.is_null());
         
-                let iRow_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(iRow, nele_jac.try_into().unwrap())};
-                let jCol_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(jCol, nele_jac.try_into().unwrap())};
+                let i_row_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(iRow, nele_jac.try_into().unwrap())};
+                let j_col_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(jCol, nele_jac.try_into().unwrap())};
         
-                iRow_slice[0] = 0;
-                jCol_slice[0] = 0;
-                iRow_slice[1] = 0;
-                jCol_slice[1] = 1;
-                iRow_slice[2] = 0;
-                jCol_slice[2] = 2;
-                iRow_slice[3] = 0;
-                jCol_slice[3] = 3;
-                iRow_slice[4] = 1;
-                jCol_slice[4] = 0;
-                iRow_slice[5] = 1;
-                jCol_slice[5] = 1;
-                iRow_slice[6] = 1;
-                jCol_slice[6] = 2;
-                iRow_slice[7] = 1;
-                jCol_slice[7] = 3; 
-        
+                assert!(i_row_slice.len() == nele_jac.try_into().unwrap());
+                assert!(j_col_slice.len() == nele_jac.try_into().unwrap());
+                
+                nlp::jacobian_constraint_elements(i_row_slice, j_col_slice);
             } 
-        
+            
             else {
         
                 assert!(!x.is_null());
@@ -538,23 +544,19 @@ pub mod ipopt {
                 
                 let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
                 let values_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(values, nele_jac.try_into().unwrap())};
+
+                assert!(x_slice.len() == n.try_into().unwrap());
+                assert!(values_slice.len() == nele_jac.try_into().unwrap());
            
-                // Return the values of the jacobian of the constraints
-        
-                values_slice[0] = x_slice[1] * x_slice[2] * x_slice[3];
-                values_slice[1] = x_slice[0] * x_slice[2] * x_slice[3];
-                values_slice[2] = x_slice[0] * x_slice[1] * x_slice[3];
-                values_slice[3] = x_slice[0] * x_slice[1] * x_slice[2];
-                values_slice[4] = 2.0 * x_slice[0];
-                values_slice[5] = 2.0 * x_slice[1];
-                values_slice[6] = 2.0 * x_slice[2];
-                values_slice[7] = 2.0 * x_slice[3];
-        
+                nlp::jacobian_constraint_function(x_slice, values_slice);        
             }
         
             true
         }
 
+        /// Implementation of callback function for evaluating the Hessian of the Lagrangian function.
+        /// 
+        /// This function converts the Hessian of the Lagrangian function definition into something that IPOPT understands.
         #[unsafe(no_mangle)]
         pub extern "C" fn eval_h(
             n: ipopt::ipindex,
@@ -571,6 +573,11 @@ pub mod ipopt {
             user_data: ipopt::UserDataPtr,
         ) -> bool {
             
+            // These variables are not yet used
+            let _ = new_x;
+            let _ = new_lambda;
+            let _ = user_data;
+            
             if values.is_null() {
         
                 assert!(x.is_null());
@@ -579,31 +586,14 @@ pub mod ipopt {
                 assert!(!lambda.is_null());
                 assert!(!iRow.is_null());
                 assert!(!jCol.is_null());
+
+                let i_row_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(iRow, nele_hess.try_into().unwrap())};
+                let j_col_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(jCol, nele_hess.try_into().unwrap())};
+        
+                assert!(i_row_slice.len() == nele_hess.try_into().unwrap());
+                assert!(j_col_slice.len() == nele_hess.try_into().unwrap());
                 
-                let iRow_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(iRow, nele_hess.try_into().unwrap())};
-                let jCol_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(jCol, nele_hess.try_into().unwrap())};
-        
-                iRow_slice[0] = 0;
-                jCol_slice[0] = 0;
-                iRow_slice[1] = 1;
-                jCol_slice[1] = 0;
-                iRow_slice[2] = 1;
-                jCol_slice[2] = 1;
-                iRow_slice[3] = 2;
-                jCol_slice[3] = 0;
-                iRow_slice[4] = 2;
-                jCol_slice[4] = 1;
-                iRow_slice[5] = 2;
-                jCol_slice[5] = 2;
-                iRow_slice[6] = 3;
-                jCol_slice[6] = 0;
-                iRow_slice[7] = 3;
-                jCol_slice[7] = 1; 
-                iRow_slice[8] = 3;
-                jCol_slice[8] = 2; 
-                iRow_slice[9] = 3;
-                jCol_slice[9] = 3;
-        
+                nlp::hessian_elements(i_row_slice, j_col_slice);        
             }
         
             else {
@@ -618,44 +608,12 @@ pub mod ipopt {
                 let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
                 let values_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(values, nele_hess.try_into().unwrap())};
                 let lambda_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(lambda, m.try_into().unwrap())};
-        
-        
-                /* return the values. This is a symmetric matrix, fill the lower left
-                * triangle only */
-            
-                /* fill the objective portion */
-                values_slice[0] = obj_factor * (2.0 * x_slice[3]);
-                
-                values_slice[1] = obj_factor * (x_slice[3]);
-                values_slice[2] = 0.0;
-            
-                values_slice[3] = obj_factor * (x_slice[3]);
-                values_slice[4] = 0.0;
-                values_slice[5] = 0.0;
-            
-                values_slice[6] = obj_factor * (2.0 * x_slice[0] + x_slice[1] + x_slice[2]);
-                values_slice[7] = obj_factor * (x_slice[0]);
-                values_slice[8] = obj_factor * (x_slice[0]);
-                values_slice[9] = 0.0;
-        
-                /* add the portion for the first constraint */
-                values_slice[1] += lambda_slice[0] * (x_slice[2] * x_slice[3]);
-            
-                values_slice[3] += lambda_slice[0] * (x_slice[1] * x_slice[3]);
-                values_slice[4] += lambda_slice[0] * (x_slice[0] * x_slice[3]);
-            
-                values_slice[6] += lambda_slice[0] * (x_slice[1] * x_slice[2]);
-                values_slice[7] += lambda_slice[0] * (x_slice[0] * x_slice[2]);
-                values_slice[8] += lambda_slice[0] * (x_slice[0] * x_slice[1]);
-            
-                /* add the portion for the second constraint */
-                values_slice[0] += lambda_slice[1] * 2.0; 
-            
-                values_slice[2] += lambda_slice[1] * 2.0; 
-            
-                values_slice[5] += lambda_slice[1] * 2.0; 
-            
-                values_slice[9] += lambda_slice[1] * 2.0; 
+
+                assert!(x_slice.len() == n.try_into().unwrap());
+                assert!(values_slice.len() == nele_hess.try_into().unwrap());
+                assert!(lambda_slice.len() == m.try_into().unwrap());
+           
+                nlp::hessian_lagrangian_function(x_slice, lambda_slice, obj_factor, values_slice); 
             }
             
             true
