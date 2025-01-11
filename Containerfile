@@ -45,3 +45,7 @@ RUN ldconfig
 WORKDIR /usr/local/src
 COPY . .
 RUN cargo run
+
+# Vendor Rust application
+# RUN cargo vendor --quiet crates
+# RUN ls crates
