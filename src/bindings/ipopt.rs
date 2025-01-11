@@ -408,8 +408,9 @@ pub mod ipopt {
         obj_value: *mut ipopt::ipnumber,
         user_data: ipopt::UserDataPtr,
         ) -> bool {
-    
-            assert!(n == 4);
+
+            assert!(!x.is_null());
+            assert!(!obj_value.is_null());
 
             // Throw away unused variables
             let _ = n;
@@ -435,8 +436,8 @@ pub mod ipopt {
             user_data: ipopt::UserDataPtr,
         ) -> bool {
             
-            assert!(n == 4);
-            assert!(m == 2);
+            assert!(!x.is_null());
+            assert!(!g.is_null());
         
             // Throw away unused variables
             let _ = n;
@@ -462,7 +463,8 @@ pub mod ipopt {
             user_data: ipopt::UserDataPtr,
         ) -> bool {
             
-            assert!(n == 4);
+            assert!(!x.is_null());
+            assert!(!grad_f.is_null());
         
             // Throw away unused variables
             let _ = new_x;
@@ -491,15 +493,18 @@ pub mod ipopt {
             values: *mut ipopt::ipnumber,
             user_data: ipopt::UserDataPtr,
         ) -> bool {
-            
-            assert!(n == 4);
-            assert!(m == 2);
-            
+
             // Throw away unused variables
             let _ = user_data;
             let _ = new_x;
         
             if values.is_null() {
+
+                assert!(x.is_null());
+                assert!(values.is_null());
+
+                assert!(!iRow.is_null());
+                assert!(!jCol.is_null());
         
                 let iRow_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(iRow, nele_jac.try_into().unwrap())};
                 let jCol_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(jCol, nele_jac.try_into().unwrap())};
@@ -525,6 +530,12 @@ pub mod ipopt {
         
             else {
         
+                assert!(!x.is_null());
+                assert!(!values.is_null());
+
+                assert!(iRow.is_null());
+                assert!(jCol.is_null());
+                
                 let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
                 let values_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(values, nele_jac.try_into().unwrap())};
            
@@ -560,15 +571,15 @@ pub mod ipopt {
             user_data: ipopt::UserDataPtr,
         ) -> bool {
             
-            assert!(n == 4);
-            assert!(m == 2);
-            // assert!(!x.is_null());
-            // assert!(!lambda.is_null());
-            // assert!(!iRow.is_null());
-            // assert!(!jCol.is_null());
-            
             if values.is_null() {
         
+                assert!(x.is_null());
+                assert!(values.is_null());
+                
+                assert!(!lambda.is_null());
+                assert!(!iRow.is_null());
+                assert!(!jCol.is_null());
+                
                 let iRow_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(iRow, nele_hess.try_into().unwrap())};
                 let jCol_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(jCol, nele_hess.try_into().unwrap())};
         
@@ -597,53 +608,57 @@ pub mod ipopt {
         
             else {
         
+                assert!(!x.is_null());
+                assert!(!values.is_null());
+                assert!(!lambda.is_null());
+                
+                assert!(iRow.is_null());
+                assert!(jCol.is_null());
+                
                 let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
                 let values_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(values, nele_hess.try_into().unwrap())};
                 let lambda_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(lambda, m.try_into().unwrap())};
         
         
-              /* return the values. This is a symmetric matrix, fill the lower left
-               * triangle only */
+                /* return the values. This is a symmetric matrix, fill the lower left
+                * triangle only */
+            
+                /* fill the objective portion */
+                values_slice[0] = obj_factor * (2.0 * x_slice[3]);
+                
+                values_slice[1] = obj_factor * (x_slice[3]);
+                values_slice[2] = 0.0;
+            
+                values_slice[3] = obj_factor * (x_slice[3]);
+                values_slice[4] = 0.0;
+                values_slice[5] = 0.0;
+            
+                values_slice[6] = obj_factor * (2.0 * x_slice[0] + x_slice[1] + x_slice[2]);
+                values_slice[7] = obj_factor * (x_slice[0]);
+                values_slice[8] = obj_factor * (x_slice[0]);
+                values_slice[9] = 0.0;
         
-              /* fill the objective portion */
-              values_slice[0] = obj_factor * (2.0 * x_slice[3]);
-              
-              values_slice[1] = obj_factor * (x_slice[3]);
-              values_slice[2] = 0.0;
-        
-              values_slice[3] = obj_factor * (x_slice[3]);
-              values_slice[4] = 0.0;
-              values_slice[5] = 0.0;
-        
-              values_slice[6] = obj_factor * (2.0 * x_slice[0] + x_slice[1] + x_slice[2]);
-              values_slice[7] = obj_factor * (x_slice[0]);
-              values_slice[8] = obj_factor * (x_slice[0]);
-              values_slice[9] = 0.0;
-        
-              /* add the portion for the first constraint */
-              values_slice[1] += lambda_slice[0] * (x_slice[2] * x_slice[3]);
-        
-              values_slice[3] += lambda_slice[0] * (x_slice[1] * x_slice[3]);
-              values_slice[4] += lambda_slice[0] * (x_slice[0] * x_slice[3]);
-        
-              values_slice[6] += lambda_slice[0] * (x_slice[1] * x_slice[2]);
-              values_slice[7] += lambda_slice[0] * (x_slice[0] * x_slice[2]);
-              values_slice[8] += lambda_slice[0] * (x_slice[0] * x_slice[1]);
-        
-              /* add the portion for the second constraint */
-              values_slice[0] += lambda_slice[1] * 2.0; 
-        
-              values_slice[2] += lambda_slice[1] * 2.0; 
-        
-              values_slice[5] += lambda_slice[1] * 2.0; 
-        
-              values_slice[9] += lambda_slice[1] * 2.0; 
-        
+                /* add the portion for the first constraint */
+                values_slice[1] += lambda_slice[0] * (x_slice[2] * x_slice[3]);
+            
+                values_slice[3] += lambda_slice[0] * (x_slice[1] * x_slice[3]);
+                values_slice[4] += lambda_slice[0] * (x_slice[0] * x_slice[3]);
+            
+                values_slice[6] += lambda_slice[0] * (x_slice[1] * x_slice[2]);
+                values_slice[7] += lambda_slice[0] * (x_slice[0] * x_slice[2]);
+                values_slice[8] += lambda_slice[0] * (x_slice[0] * x_slice[1]);
+            
+                /* add the portion for the second constraint */
+                values_slice[0] += lambda_slice[1] * 2.0; 
+            
+                values_slice[2] += lambda_slice[1] * 2.0; 
+            
+                values_slice[5] += lambda_slice[1] * 2.0; 
+            
+                values_slice[9] += lambda_slice[1] * 2.0; 
             }
-        
+            
             true
         }
-
     }
-
 }
