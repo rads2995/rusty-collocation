@@ -1,5 +1,4 @@
-# Use a Debian base image with Rust installed
-FROM debian:bookworm
+FROM rust:1.84.0-slim-bookworm
 
 # Update and upgrade all base image packages, then install required dependencies
 RUN apt-get update && apt-get -y upgrade
@@ -14,8 +13,7 @@ RUN apt-get install -y \
     liblapack-dev \
     libmetis-dev \
     make \
-    cmake \
-    rust-all
+    cmake
 
 # Set the working directory
 WORKDIR /usr/local/src
