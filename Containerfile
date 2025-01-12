@@ -1,5 +1,5 @@
 # Use a Debian base image with Rust installed
-FROM rust:bookworm
+FROM debian:bookworm
 
 # Update and upgrade all base image packages, then install required dependencies
 RUN apt-get update && apt-get -y upgrade
@@ -14,7 +14,8 @@ RUN apt-get install -y \
     liblapack-dev \
     libmetis-dev \
     make \
-    cmake
+    cmake \
+    rust-all
 
 # Set the working directory
 WORKDIR /usr/local/src
@@ -47,5 +48,8 @@ COPY . .
 RUN cargo run
 
 # Vendor Rust application
-# RUN cargo vendor --quiet crates
-# RUN ls crates
+RUN mkdir ./cargo
+RUN touch ./cargo/config.toml
+RUN cargo vendor --quiet crates > ./cargo/config.toml
+RUN cargo clean
+RUN cargo build --offline
