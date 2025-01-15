@@ -44,10 +44,3 @@ RUN ldconfig
 WORKDIR /usr/local/src
 COPY . .
 RUN cargo run
-
-# Vendor Rust application
-RUN mkdir ./cargo
-RUN touch ./cargo/config.toml
-RUN cargo vendor --quiet crates > ./cargo/config.toml
-RUN cargo clean
-RUN cargo build --offline
