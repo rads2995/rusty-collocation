@@ -5,4 +5,4 @@ members = [
     "crates/rusty-interior",
 ]
 
-default-members = ["crates/rusty-interior"]
+default-members = ["crates/rusty-collocation"]

@@ -51,6 +51,11 @@ dependencies = [
 [[package]]
 name = "rusty-collocation"
 version = "0.1.0"
+dependencies = [
+ "rusty-interior",
+ "serde",
+ "toml",
+]
 
 [[package]]
 name = "rusty-interior"
