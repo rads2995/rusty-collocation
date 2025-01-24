@@ -44,8 +44,6 @@ pub mod ipopt {
     pub type IpoptProblem = *mut IpoptProblemInfo;
 
     /// A pointer for anything that is to be passed between the called and individual callback function.
-    ///
-    /// **Todo:** Call should be to a `*mut core::ffi::c_void`, but requires opaque struct instead?
     pub type UserDataPtr = *mut IpoptProblemInfo;
 
     /// Return codes for the Optimize call for an application.
@@ -114,7 +112,7 @@ pub mod ipopt {
     /// Return value should be set to false if there was a problem doing the evaluation.
     /// 
     /// See also `Ipopt::TNLP::eval_f`.
-    pub type Eval_F_CB = core::option::Option<
+    type Eval_F_CB = core::option::Option<
         unsafe extern "C" fn(
             n: ipindex,
             x: *mut ipnumber,
@@ -129,7 +127,7 @@ pub mod ipopt {
     /// Return value should be set to false if there was a problem doing the evaluation.
     /// 
     /// See also `Ipopt::TNLP::eval_grad_f`.
-    pub type Eval_Grad_F_CB = core::option::Option<
+    type Eval_Grad_F_CB = core::option::Option<
         unsafe extern "C" fn(
             n: ipindex,
             x: *mut ipnumber,
@@ -144,7 +142,7 @@ pub mod ipopt {
     /// Return value should be set to false if there was a problem doing the evaluation.
     /// 
     /// See also `Ipopt::TNLP::eval_g`.
-    pub type Eval_G_CB = core::option::Option<
+    type Eval_G_CB = core::option::Option<
         unsafe extern "C" fn(
             n: ipindex,
             x: *mut ipnumber,
@@ -160,7 +158,7 @@ pub mod ipopt {
     /// Return value should be set to false if there was a problem doing the evaluation.
     /// 
     /// See also `Ipopt::TNLP::eval_jac_g`.
-    pub type Eval_Jac_G_CB = core::option::Option<
+    type Eval_Jac_G_CB = core::option::Option<
         unsafe extern "C" fn(
             n: ipindex,
             x: *mut ipnumber,
@@ -179,7 +177,7 @@ pub mod ipopt {
     /// Return value should be set to false if there was a problem doing the evaluation.
     /// 
     /// See also `Ipopt::TNLP::eval_h`.
-    pub type Eval_H_CB = core::option::Option<
+    type Eval_H_CB = core::option::Option<
         unsafe extern "C" fn(
             n: ipindex,
             x: *mut ipnumber,
@@ -205,7 +203,7 @@ pub mod ipopt {
     /// If this method returns false, Ipopt will terminate the optimization.
     /// 
     /// See also `Ipopt::TNLP::intermediate_callback`.
-    pub type Intermediate_CB = core::option::Option<
+    type Intermediate_CB = core::option::Option<
         unsafe extern "C" fn(
             alg_mod: ipindex,
             iter_count: ipindex,
