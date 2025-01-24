@@ -1,6 +1,6 @@
 pub mod nlp {
-
-    use rusty_interior::bindings::ipopt::*;
+    
+    use crate::bindings::ipopt::*;
     
     pub fn objective_function(x: &[ipopt::ipnumber]) -> ipopt::ipnumber {
 

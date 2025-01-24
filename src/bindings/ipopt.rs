@@ -4,7 +4,7 @@
     unused,
 )]
 
-pub mod ipopt {
+pub(crate) mod ipopt {
 
     /// Type of all indices of vectors, matrices, etc.
     ///

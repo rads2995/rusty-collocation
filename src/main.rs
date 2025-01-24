@@ -1,13 +1,12 @@
 use std::fs;
 use serde::Deserialize;
-
-mod bindings {
-    pub mod ipopt;
-}
+use bindings::ipopt::*;
 
 pub mod nlp;
 
-use crate::bindings::ipopt::*;
+pub mod bindings{
+    pub mod ipopt;
+}
 
 #[derive(Deserialize)]
 struct Config {
