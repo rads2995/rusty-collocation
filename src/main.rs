@@ -2,6 +2,7 @@ mod nlp;
 mod bindings {
     pub mod ipopt;
 }
+mod ocp;
 
 use bindings::ipopt::ipopt_ffi::{
     ipnumber,
@@ -22,6 +23,9 @@ use bindings::ipopt::ipopt_ffi::helper::{
     eval_grad_f,
     eval_jac_g,
     eval_h,
+};
+use ocp::bolza::{
+    legendre_polynomial,
 };
 
 use serde::Deserialize;
@@ -48,7 +52,7 @@ struct Ipopt {
 
 fn main() {
     let config_file: String =
-        fs::read_to_string("config.toml").expect("Unable to read configuration file");
+        fs::read_to_string("settings.toml").expect("Unable to read configuration file");
 
     let mut config_data: Config = toml::from_str(&config_file).unwrap();
 
