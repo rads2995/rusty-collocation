@@ -1,12 +1,31 @@
-use bindings::ipopt::*;
-use serde::Deserialize;
-use std::fs;
-
-pub mod nlp;
-
-pub mod bindings {
+mod nlp;
+mod bindings {
     pub mod ipopt;
 }
+
+use bindings::ipopt::ipopt_ffi::{
+    ipnumber,
+    ipindex,
+    IpoptProblemInfo,
+    IpoptProblem,
+    ApplicationReturnStatus,
+    IpoptReturnStatus,
+    CreateIpoptProblem,
+    AddIpoptNumOption,
+    AddIpoptStrOption,
+    IpoptSolve,
+    FreeIpoptProblem,
+};
+use bindings::ipopt::ipopt_ffi::helper::{
+    eval_f,
+    eval_g,
+    eval_grad_f,
+    eval_jac_g,
+    eval_h,
+};
+
+use serde::Deserialize;
+use std::fs;
 
 #[derive(Deserialize)]
 struct Config {
@@ -15,16 +34,16 @@ struct Config {
 
 #[derive(Deserialize)]
 struct Ipopt {
-    tol: ipopt::ipnumber,
+    tol: ipnumber,
     mu_strategy: std::ffi::CString,
     output_file: std::ffi::CString,
     linear_solver: std::ffi::CString,
     index_style: u32,
-    x: Vec<ipopt::ipnumber>,
-    x_l: Vec<ipopt::ipnumber>,
-    x_u: Vec<ipopt::ipnumber>,
-    g_l: Vec<ipopt::ipnumber>,
-    g_u: Vec<ipopt::ipnumber>,
+    x: Vec<ipnumber>,
+    x_l: Vec<ipnumber>,
+    x_u: Vec<ipnumber>,
+    g_l: Vec<ipnumber>,
+    g_u: Vec<ipnumber>,
 }
 
 fn main() {
@@ -46,12 +65,12 @@ fn main() {
     let num_elem_hess: i32 = 10;
 
     // Create stack-allocated arrays to store IPOPT obtained values
-    let mut obj: [ipopt::ipnumber; 1] = [0.0];
+    let mut obj: [ipnumber; 1] = [0.0];
 
     // Create heap-allocated arrays to store IPOPT obtained values
-    let mut mult_g: Vec<ipopt::ipnumber> = vec![0.0; config_data.ipopt.g_l.len()];
-    let mut mult_x_l: Vec<ipopt::ipnumber> = vec![0.0; config_data.ipopt.x_l.len()];
-    let mut mult_x_u: Vec<ipopt::ipnumber> = vec![0.0; config_data.ipopt.x_u.len()];
+    let mut mult_g: Vec<ipnumber> = vec![0.0; config_data.ipopt.g_l.len()];
+    let mut mult_x_l: Vec<ipnumber> = vec![0.0; config_data.ipopt.x_l.len()];
+    let mut mult_x_u: Vec<ipnumber> = vec![0.0; config_data.ipopt.x_u.len()];
 
     // Verify that all stack and heap-allocated arrays have the correct dimensions
     assert!(config_data.ipopt.x.len() == n);
@@ -61,44 +80,44 @@ fn main() {
     assert!(mult_x_u.len() == n);
 
     // Create opaque C-style struct that will be used to store IPOPT information
-    let mut user_data: ipopt::IpoptProblemInfo = ipopt::IpoptProblemInfo::default();
+    let mut user_data: IpoptProblemInfo = IpoptProblemInfo::default();
 
     unsafe {
-        let nlp: ipopt::IpoptProblem = ipopt::CreateIpoptProblem(
-            n as ipopt::ipindex,
+        let nlp: IpoptProblem = CreateIpoptProblem(
+            n as ipindex,
             config_data.ipopt.x_l.as_mut_ptr(),
             config_data.ipopt.x_u.as_mut_ptr(),
-            m as ipopt::ipindex,
+            m as ipindex,
             config_data.ipopt.g_l.as_mut_ptr(),
             config_data.ipopt.g_u.as_mut_ptr(),
-            num_elem_jac as ipopt::ipindex,
-            num_elem_hess as ipopt::ipindex,
-            config_data.ipopt.index_style as ipopt::ipindex,
-            Some(ipopt::helper::eval_f),
-            Some(ipopt::helper::eval_g),
-            Some(ipopt::helper::eval_grad_f),
-            Some(ipopt::helper::eval_jac_g),
-            Some(ipopt::helper::eval_h),
+            num_elem_jac as ipindex,
+            num_elem_hess as ipindex,
+            config_data.ipopt.index_style as ipindex,
+            Some(eval_f),
+            Some(eval_g),
+            Some(eval_grad_f),
+            Some(eval_jac_g),
+            Some(eval_h),
         );
 
-        ipopt::AddIpoptNumOption(nlp, c"tol".as_ptr() as *const i8, config_data.ipopt.tol);
-        ipopt::AddIpoptStrOption(
+        AddIpoptNumOption(nlp, c"tol".as_ptr(), config_data.ipopt.tol);
+        AddIpoptStrOption(
             nlp,
-            c"mu_strategy".as_ptr() as *const i8,
-            config_data.ipopt.mu_strategy.as_ptr() as *const i8,
+            c"mu_strategy".as_ptr(),
+            config_data.ipopt.mu_strategy.as_ptr(),
         );
-        ipopt::AddIpoptStrOption(
+        AddIpoptStrOption(
             nlp,
-            c"output_file".as_ptr() as *const i8,
-            config_data.ipopt.output_file.as_ptr() as *const i8,
+            c"output_file".as_ptr(),
+            config_data.ipopt.output_file.as_ptr(),
         );
-        ipopt::AddIpoptStrOption(
+        AddIpoptStrOption(
             nlp,
-            c"linear_solver".as_ptr() as *const i8,
-            config_data.ipopt.linear_solver.as_ptr() as *const i8,
+            c"linear_solver".as_ptr(),
+            config_data.ipopt.linear_solver.as_ptr(),
         );
 
-        let status: i32 = ipopt::IpoptSolve(
+        let status: ApplicationReturnStatus = IpoptSolve(
             nlp,
             config_data.ipopt.x.as_mut_ptr(),
             core::ptr::null_mut(),
@@ -106,16 +125,16 @@ fn main() {
             mult_g.as_mut_ptr(),
             mult_x_l.as_mut_ptr(),
             mult_x_u.as_mut_ptr(),
-            &mut user_data as *mut ipopt::IpoptProblemInfo,
+            &mut user_data as *mut IpoptProblemInfo,
         );
 
-        match ipopt::IpoptReturnStatus::try_from(status) {
+        match IpoptReturnStatus::try_from(status) {
             Ok(enum_value) => match enum_value {
-                ipopt::IpoptReturnStatus::SolveSucceeded => {
+                IpoptReturnStatus::SolveSucceeded => {
                     println!("Solve succeded!");
                 }
 
-                _ => println!("Other status: {:?}", enum_value),
+                _ => println!("Return code unkown"),
             },
 
             Err(_) => {
@@ -123,6 +142,6 @@ fn main() {
             }
         }
 
-        ipopt::FreeIpoptProblem(nlp);
+        FreeIpoptProblem(nlp);
     }
 }
