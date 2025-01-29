@@ -1719,3 +1719,31 @@ pub(crate) mod cblas_ffi {
         );
     }   
 }
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use super::cblas_ffi::*;
+
+    #[test]
+    fn test_cblas_sdsdot() {
+       
+        let x: [core::ffi::c_float; 3] = [1.0, 2.0, 3.0];
+        let y: [core::ffi::c_float; 3] = [1.0, 2.0, 3.0];
+        let scalar: core::ffi::c_float = 0.0;
+
+        assert!(x.len() == y.len());
+
+        unsafe {
+            let result: f32 = cblas_sdsdot(
+                x.len() as core::ffi::c_int,
+                scalar,
+                x.as_ptr(),
+                1,
+                y.as_ptr(),
+                1
+             );
+
+            assert_eq!(14.0,result);
+        }
+    }
+}
