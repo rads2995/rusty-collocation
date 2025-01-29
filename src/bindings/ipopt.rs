@@ -1,88 +1,72 @@
-#[allow(
-    non_camel_case_types,
-    non_snake_case,
-    unused,
-)]
+#![allow(non_camel_case_types, non_snake_case, unused)]
 
-pub mod ipopt {
+/// IPOPT Foreign Function Interface (FFI)
+pub(crate) mod ipopt_ffi {
 
     /// Type of all indices of vectors, matrices, etc.
     ///
     /// Requires IPOPT version >= 3.14.0.
-    ///
-    /// **Todo:** If IPOPT builds with `int64_t`, this should be:
-    /// 
-    /// - GNU/Linux: `core::ffi::c_long`
-    /// 
-    /// - Windows: `core::ffi::c_longlong`
-    pub type ipindex = core::ffi::c_int;
+    pub(crate) type ipindex = core::ffi::c_int;
 
     /// Type for floating-point numbers.
     ///
     /// Requires IPOPT version >= 3.14.0.
-    /// 
-    /// **Todo:** If IPOPT builds with single-precision, this should be `core::ffi::c_float`.
-    pub type ipnumber = core::ffi::c_double;
+    pub(crate) type ipnumber = core::ffi::c_double;
 
     /// Opaque structure collecting all information about the problem definition and solve statistics, etc.
     #[repr(C)]
-    pub struct IpoptProblemInfo {
+    pub(crate) struct IpoptProblemInfo {
         _data: [u8; 0],
         _marker: core::marker::PhantomData<(*mut u8, core::marker::PhantomPinned)>,
     }
 
     impl IpoptProblemInfo {
-        pub fn default() -> Self {
+        pub(crate) fn default() -> Self {
             IpoptProblemInfo {
                 _data: [],
                 _marker: core::marker::PhantomData,
             }
         }
     }
-    
+
     /// Pointer to an Ipopt Problem.
-    pub type IpoptProblem = *mut IpoptProblemInfo;
+    pub(crate) type IpoptProblem = *mut IpoptProblemInfo;
 
     /// A pointer for anything that is to be passed between the called and individual callback function.
-    ///
-    /// **Todo:** Call should be to a `*mut core::ffi::c_void`, but requires opaque struct instead?
-    pub type UserDataPtr = *mut IpoptProblemInfo;
+    pub(crate) type UserDataPtr = *mut IpoptProblemInfo;
 
     /// Return codes for the Optimize call for an application.
-    pub type ApplicationReturnStatus = core::ffi::c_int;
+    pub(crate) type ApplicationReturnStatus = core::ffi::c_int;
 
-    /// Rust IPOPT return codes for the Optimize call for an application.
-    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-    pub enum IpoptReturnStatus {
-       SolveSucceeded                   = 0,
-       SolvedToAcceptableLevel          = 1,
-       InfeasibleProblemDetected        = 2,
-       SearchDirectionBecomesTooSmall   = 3,
-       DivergingIterates                = 4,
-       UserRequestedStop                = 5,
-       FeasiblePointFound               = 6,
-    
-       MaximumIterationsExceeded        = -1,
-       RestorationFailed                = -2,
-       ErrorInStepComputation           = -3,
-       MaximumCpuTimeExceeded           = -4,
-       MaximumWallTimeExceeded          = -5,   // Since 3.14.0
-    
-       NotEnoughDegreesOfFreedom        = -10,
-       InvalidProblemDefinition         = -11,
-       InvalidOption                    = -12,
-       InvalidNumberDetected            = -13,
-    
-       UnrecoverableException           = -100,
-       NonIpoptExceptionThrown          = -101,
-       InsufficientMemory               = -102,
-       InternalError                    = -199
-    } 
-    
-    impl core::convert::TryFrom<i32> for IpoptReturnStatus {
+    /// Safe wrapper for IPOPT return codes for the Optimize call for an application.
+    #[derive(Copy, Clone, PartialEq, Eq)]
+    pub(crate) enum IpoptReturnStatus {
+        SolveSucceeded = 0,
+        SolvedToAcceptableLevel = 1,
+        InfeasibleProblemDetected = 2,
+        SearchDirectionBecomesTooSmall = 3,
+        DivergingIterates = 4,
+        UserRequestedStop = 5,
+        FeasiblePointFound = 6,
+        MaximumIterationsExceeded = -1,
+        RestorationFailed = -2,
+        ErrorInStepComputation = -3,
+        MaximumCpuTimeExceeded = -4,
+        MaximumWallTimeExceeded = -5,
+        NotEnoughDegreesOfFreedom = -10,
+        InvalidProblemDefinition = -11,
+        InvalidOption = -12,
+        InvalidNumberDetected = -13,
+        UnrecoverableException = -100,
+        NonIpoptExceptionThrown = -101,
+        InsufficientMemory = -102,
+        InternalError = -199,
+    }
+
+    impl core::convert::TryFrom<ApplicationReturnStatus> for IpoptReturnStatus {
         type Error = ();
 
-        fn try_from(code: i32) -> Result<Self, Self::Error> {
+        fn try_from(code: ApplicationReturnStatus) -> Result<Self, Self::Error> {
             match code {
                 0 => Ok(Self::SolveSucceeded),
                 1 => Ok(Self::SolvedToAcceptableLevel),
@@ -104,17 +88,17 @@ pub mod ipopt {
                 -101 => Ok(Self::NonIpoptExceptionThrown),
                 -102 => Ok(Self::InsufficientMemory),
                 -199 => Ok(Self::InternalError),
-                _ => Err(()), 
+                _ => Err(()),
             }
         }
     }
 
     /// Type defining the callback function for evaluating the value of the objective function.
-    /// 
+    ///
     /// Return value should be set to false if there was a problem doing the evaluation.
-    /// 
+    ///
     /// See also `Ipopt::TNLP::eval_f`.
-    pub type Eval_F_CB = core::option::Option<
+    type Eval_F_CB = core::option::Option<
         unsafe extern "C" fn(
             n: ipindex,
             x: *mut ipnumber,
@@ -123,13 +107,13 @@ pub mod ipopt {
             user_data: UserDataPtr,
         ) -> bool,
     >;
-    
+
     /// Type defining the callback function for evaluating the gradient of the objective function.
-    /// 
+    ///
     /// Return value should be set to false if there was a problem doing the evaluation.
-    /// 
+    ///
     /// See also `Ipopt::TNLP::eval_grad_f`.
-    pub type Eval_Grad_F_CB = core::option::Option<
+    type Eval_Grad_F_CB = core::option::Option<
         unsafe extern "C" fn(
             n: ipindex,
             x: *mut ipnumber,
@@ -140,11 +124,11 @@ pub mod ipopt {
     >;
 
     /// Type defining the callback function for evaluating the value of the constraint functions.
-    /// 
+    ///
     /// Return value should be set to false if there was a problem doing the evaluation.
-    /// 
+    ///
     /// See also `Ipopt::TNLP::eval_g`.
-    pub type Eval_G_CB = core::option::Option<
+    type Eval_G_CB = core::option::Option<
         unsafe extern "C" fn(
             n: ipindex,
             x: *mut ipnumber,
@@ -156,11 +140,11 @@ pub mod ipopt {
     >;
 
     /// Type defining the callback function for evaluating the Jacobian of the constrant functions.
-    /// 
+    ///
     /// Return value should be set to false if there was a problem doing the evaluation.
-    /// 
+    ///
     /// See also `Ipopt::TNLP::eval_jac_g`.
-    pub type Eval_Jac_G_CB = core::option::Option<
+    type Eval_Jac_G_CB = core::option::Option<
         unsafe extern "C" fn(
             n: ipindex,
             x: *mut ipnumber,
@@ -173,13 +157,13 @@ pub mod ipopt {
             user_data: UserDataPtr,
         ) -> bool,
     >;
-    
+
     /// Type defining the callback function for evaluating the Hessian of the Lagrangian function.
-    /// 
+    ///
     /// Return value should be set to false if there was a problem doing the evaluation.
-    /// 
+    ///
     /// See also `Ipopt::TNLP::eval_h`.
-    pub type Eval_H_CB = core::option::Option<
+    type Eval_H_CB = core::option::Option<
         unsafe extern "C" fn(
             n: ipindex,
             x: *mut ipnumber,
@@ -195,17 +179,17 @@ pub mod ipopt {
             user_data: UserDataPtr,
         ) -> bool,
     >;
-    
+
     /// Type defining the callback function for giving intermediate execution control to the user.
-    /// 
+    ///
     /// If set, it is called once per iteration, providing the user\
     /// with some information on the state of the optimization.\
     /// This can be used to print some user-defined output.\
     /// It also gives the user a way to terminate the optimization prematurely.\
     /// If this method returns false, Ipopt will terminate the optimization.
-    /// 
+    ///
     /// See also `Ipopt::TNLP::intermediate_callback`.
-    pub type Intermediate_CB = core::option::Option<
+    type Intermediate_CB = core::option::Option<
         unsafe extern "C" fn(
             alg_mod: ipindex,
             iter_count: ipindex,
@@ -220,14 +204,14 @@ pub mod ipopt {
             ls_trials: ipindex,
             user_data: UserDataPtr,
         ) -> bool,
-    >;   
+    >;
 
     // Here, we assume that we are linking to IPOPT as a dynamic-library.
     #[link(name = "ipopt", kind = "dylib")]
     unsafe extern "C" {
 
         /// Function for creating a new Ipopt Problem object.
-        /// 
+        ///
         /// This function returns an object that can be passed to the IpoptSolve call.\
         /// It contains the basic definition of the optimization problem, such\
         /// as number of variables and constraints, bounds on variables and\
@@ -235,12 +219,12 @@ pub mod ipopt {
         /// function for the computation of the optimization problem\
         /// functions and derivatives. During this call, the options file\
         /// `PARAMS.DAT` is read as well.
-        /// 
+        ///
         /// If `NULL` is returned, there was a problem with one of the inputs\
         /// or reading the options file.
-        /// 
+        ///
         /// See also `Ipopt::TNLP::get_nlp_info` and `Ipopt::TNLP::get_bounds_info`.
-        pub unsafe fn CreateIpoptProblem(
+        pub(crate) unsafe fn CreateIpoptProblem(
             n: ipindex,
             x_L: *mut ipnumber,
             x_U: *mut ipnumber,
@@ -258,54 +242,52 @@ pub mod ipopt {
         ) -> IpoptProblem;
 
         /// Method for freeing a previously created IpoptProblem.
-        /// 
+        ///
         /// After freeing an IpoptProblem, it cannot be used anymore.
-        pub unsafe fn FreeIpoptProblem(
-            ipopt_problem: IpoptProblem
-        );
+        pub(crate) unsafe fn FreeIpoptProblem(ipopt_problem: IpoptProblem);
 
         /// Function for adding a string option.
-        /// 
+        ///
         /// Return false, if the option could not be set (e.g., if keyword is unknown).
-        pub unsafe fn AddIpoptStrOption(
+        pub(crate) unsafe fn AddIpoptStrOption(
             ipopt_problem: IpoptProblem,
             keyword: *const core::ffi::c_char,
             val: *const core::ffi::c_char,
         ) -> bool;
 
         /// Function for adding a Number option.
-        /// 
+        ///
         /// Return false, if the option could not be set (e.g., if keyword is unknown).
-        pub unsafe fn AddIpoptNumOption(
+        pub(crate) unsafe fn AddIpoptNumOption(
             ipopt_problem: IpoptProblem,
             keyword: *const core::ffi::c_char,
             val: ipnumber,
         ) -> bool;
 
         /// Function for adding an Integer option.
-        /// 
+        ///
         /// Return false, if the option could not be set (e.g., if keyword is unknown).
-        pub unsafe fn AddIpoptIntOption(
+        pub(crate) unsafe fn AddIpoptIntOption(
             ipopt_problem: IpoptProblem,
             keyword: *const core::ffi::c_char,
             val: ipindex,
         ) -> bool;
 
         /// Function for opening an output file for a given name with given printlevel.
-        /// 
+        ///
         /// Return false, if there was a problem opening the file.
-        pub unsafe fn OpenIpoptOutputFile(
+        pub(crate) unsafe fn OpenIpoptOutputFile(
             ipopt_problem: IpoptProblem,
             file_name: *const core::ffi::c_char,
             print_level: core::ffi::c_int,
         ) -> bool;
-        
+
         /// Optional function for setting scaling parameter for the NLP.
-        /// 
+        ///
         /// This corresponds to the `TNLP::get_scaling_parameters` method.\
         /// If the pointers `x_scaling` or `g_scaling` are `NULL`, then no scaling\
         /// for x resp. g is done.
-        pub unsafe fn SetIpoptProblemScaling(
+        pub(crate) unsafe fn SetIpoptProblemScaling(
             ipopt_problem: IpoptProblem,
             obj_scaling: ipnumber,
             x_scaling: *mut ipnumber,
@@ -313,7 +295,7 @@ pub mod ipopt {
         ) -> bool;
 
         /// Setting a callback function for the "intermediate callback" method in the TNLP.
-        /// 
+        ///
         /// This gives control back to the user once\
         /// per iteration. If set, it provides the user with some\
         /// information on the state of the optimization. This can be used\
@@ -322,16 +304,16 @@ pub mod ipopt {
         /// method returns false, Ipopt will terminate the optimization.\
         /// Calling this set method to set the CB pointer to `NULL` disables\
         /// the intermediate callback functionality.
-        pub unsafe fn SetIntermediateCallback(
+        pub(crate) unsafe fn SetIntermediateCallback(
             ipopt_problem: IpoptProblem,
             intermediate_cb: Intermediate_CB,
         ) -> bool;
 
         /// Function calling the Ipopt optimization algorithm for a problem\
         /// previously defined with `CreateIpoptProblem`.
-        /// 
+        ///
         /// Return outcome of the optimization procedure (e.g., success, failure, etc.).
-        pub unsafe fn IpoptSolve(
+        pub(crate) unsafe fn IpoptSolve(
             ipopt_problem: IpoptProblem,
             x: *mut ipnumber,
             g: *mut ipnumber,
@@ -343,19 +325,19 @@ pub mod ipopt {
         ) -> ApplicationReturnStatus;
 
         /// Get primal and dual variable values of the current iterate.
-        /// 
+        ///
         /// This method can be used to get the values of the current iterate during the intermediate callback set by `SetIntermediateCallback()`.\
         /// The method expects the number of variables (dimension of x), number of constraints (dimension of g(x)),\
         /// and allocated arrays of appropriate lengths as input.
-        /// 
+        ///
         /// The method translates the x(), c(), d(), y_c(), y_d(), z_L(), and z_U() vectors from `Ipopt::IpoptData::curr()`\
         /// of the internal NLP representation into the form used by the TNLP.\
         /// For the correspondence between scaled and unscaled solutions, see the detailed description of `Ipopt::OrigIpoptNLP`.\
         /// If IPOPT is in restoration mode, it maps the current iterate of restoration NLP (see `Ipopt::RestoIpoptNLP`) back to the original TNLP.
-        /// 
+        ///
         /// If there are fixed variables and `fixed_variable_treatment=make_parameter`, then requesting z_L and z_U can trigger a reevaluation of\
         /// the Gradient of the objective function and the Jacobian of the constraint functions.
-        pub unsafe fn GetIpoptCurrentIterate(
+        pub(crate) unsafe fn GetIpoptCurrentIterate(
             ipopt_problem: IpoptProblem,
             scaled: bool,
             n: ipindex,
@@ -366,24 +348,24 @@ pub mod ipopt {
             g: *mut ipnumber,
             lambda: *mut ipnumber,
         ) -> bool;
-        
+
         /// Get primal and dual infeasibility of the current iterate.
-        /// 
+        ///
         /// This method can be used to get the violations of constraints and optimality conditions\
         /// at the current iterate during the intermediate callback set by `SetIntermediateCallback()`.\
         /// The method expects the number of variables (dimension of x), number of constraints (dimension of g(x)),\
         /// and allocated arrays of appropriate lengths as input.
-        /// 
+        ///
         /// The method makes the vectors behind `(unscaled_)curr_orig_bounds_violation()`, `(unscaled_)curr_nlp_constraint_violation()`, `(unscaled_)curr_dual_infeasibility()`,\
         /// `(unscaled_)curr_complementarity()` from `Ipopt::IpoptCalculatedQuantities` of the internal NLP representation available into the form used by the TNLP.\
         /// If IPOPT is in restoration mode, it maps the current iterate of restoration NLP (see `Ipopt::RestoIpoptNLP`) back to the original TNLP.
-        /// 
+        ///
         /// **Note:** If in restoration phase, then requesting `grad_lag_x` can trigger a call to `Eval_F_CB`.
-        /// 
+        ///
         /// **Note:** Ipopt by default relaxes variable bounds (option `bound_relax_factor` > 0.0).\
         /// `x_L_violation` and `x_U_violation` report the violation of a solution w.r.t. the original unrelaxed bounds.\
         /// However, `compl_x_L` and `compl_x_U` use the relaxed variable bounds to calculate the complementarity.
-        pub unsafe fn GetIpoptCurrentViolations(
+        pub(crate) unsafe fn GetIpoptCurrentViolations(
             ipopt_problem: IpoptProblem,
             scaled: bool,
             n: ipindex,
@@ -398,23 +380,35 @@ pub mod ipopt {
         ) -> bool;
     }
 
-    pub mod helper {
+    pub(crate) mod helper {
         
-        use crate::bindings::ipopt::*;
-        use crate::nlp::*;
-        
+        use crate::bindings::ipopt::ipopt_ffi::{
+            ipindex,
+            ipnumber,
+            UserDataPtr
+        };
+
+        use crate::nlp::nlp_interface::ipopt::{
+            objective_function,
+            constraint_functions,
+            gradient_objective_function,
+            jacobian_constraint_elements,
+            jacobian_constraint_function,
+            hessian_elements,
+            hessian_lagrangian_function,
+        };
+
         /// Implementation of callback function for evaluating the value of the objective function.
-        /// 
+        ///
         /// This function converts the objective function definition into something that IPOPT understands.
         #[unsafe(no_mangle)]
-        pub extern "C" fn eval_f(
-        n: ipopt::ipindex,
-        x: *mut ipopt::ipnumber,
-        new_x: bool,
-        obj_value: *mut ipopt::ipnumber,
-        user_data: ipopt::UserDataPtr,
+        pub(crate) extern "C" fn eval_f(
+            n: ipindex,
+            x: *mut ipnumber,
+            new_x: bool,
+            obj_value: *mut ipnumber,
+            user_data: UserDataPtr,
         ) -> bool {
-
             assert!(!x.is_null());
             assert!(!obj_value.is_null());
 
@@ -422,200 +416,206 @@ pub mod ipopt {
             let _ = new_x;
             let _ = user_data;
 
-            let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
+            let x_slice: &[ipnumber] =
+                unsafe { core::slice::from_raw_parts_mut(x, n.try_into().unwrap()) };
 
             assert!(x_slice.len() == n.try_into().unwrap());
-            
-            let objective_value: ipopt::ipnumber = nlp::objective_function(x_slice);
 
-            unsafe { *obj_value = objective_value; }
+            let objective_value: ipnumber = objective_function(x_slice);
+
+            unsafe {
+                *obj_value = objective_value;
+            }
 
             true
         }
 
         /// Implementation of callback function for evaluating the value of the constraint functions.
-        /// 
+        ///
         /// This function converts the constraint functions definitions into something that IPOPT understands.
         #[unsafe(no_mangle)]
-        pub extern "C" fn eval_g(
-            n: ipopt::ipindex,
-            x: *mut ipopt::ipnumber,
+        pub(crate) extern "C" fn eval_g(
+            n: ipindex,
+            x: *mut ipnumber,
             new_x: bool,
-            m: ipopt::ipindex,
-            g: *mut ipopt::ipnumber,
-            user_data: ipopt::UserDataPtr,
+            m: ipindex,
+            g: *mut ipnumber,
+            user_data: UserDataPtr,
         ) -> bool {
-            
             assert!(!x.is_null());
             assert!(!g.is_null());
-        
+
             // These variables are not yet used
             let _ = n;
             let _ = m;
             let _ = new_x;
             let _ = user_data;
-            
-            let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
-            let g_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(g, m.try_into().unwrap())};
-        
+
+            let x_slice: &[ipnumber] =
+                unsafe { core::slice::from_raw_parts_mut(x, n.try_into().unwrap()) };
+            let g_slice: &mut [ipnumber] =
+                unsafe { core::slice::from_raw_parts_mut(g, m.try_into().unwrap()) };
+
             assert!(x_slice.len() == n.try_into().unwrap());
             assert!(g_slice.len() == m.try_into().unwrap());
-            
-            nlp::constraint_functions(x_slice, g_slice);
-        
+
+            constraint_functions(x_slice, g_slice);
+
             true
         }
 
         /// Implementation of callback function for evaluating the gradient of the objective function.
-        /// 
+        ///
         /// This function converts the gradient of the objective function definition into something that IPOPT understands.
         #[unsafe(no_mangle)]
-        pub extern "C" fn eval_grad_f(
-            n: ipopt::ipindex,
-            x: *mut ipopt::ipnumber,
+        pub(crate) extern "C" fn eval_grad_f(
+            n: ipindex,
+            x: *mut ipnumber,
             new_x: bool,
-            grad_f: *mut ipopt::ipnumber,
-            user_data: ipopt::UserDataPtr,
+            grad_f: *mut ipnumber,
+            user_data: UserDataPtr,
         ) -> bool {
-            
             assert!(!x.is_null());
             assert!(!grad_f.is_null());
-        
+
             // These variables are not yet used
             let _ = new_x;
             let _ = user_data;
-            
-            let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
-            let grad_f_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(grad_f, n.try_into().unwrap())};
-        
+
+            let x_slice: &[ipnumber] =
+                unsafe { core::slice::from_raw_parts_mut(x, n.try_into().unwrap()) };
+            let grad_f_slice: &mut [ipnumber] =
+                unsafe { core::slice::from_raw_parts_mut(grad_f, n.try_into().unwrap()) };
+
             assert!(x_slice.len() == n.try_into().unwrap());
             assert!(grad_f_slice.len() == n.try_into().unwrap());
-                        
-            nlp::gradient_objective_function(x_slice, grad_f_slice);
+
+            gradient_objective_function(x_slice, grad_f_slice);
 
             true
         }
 
         /// Implementation of callback function for evaluating the Jacobian of the constrant functions.
-        /// 
+        ///
         /// This function converts the Jacobian of the constrant functions definitions into something that IPOPT understands.
         #[unsafe(no_mangle)]
-        pub extern "C" fn eval_jac_g(
-            n: ipopt::ipindex,
-            x: *mut ipopt::ipnumber,
+        pub(crate) extern "C" fn eval_jac_g(
+            n: ipindex,
+            x: *mut ipnumber,
             new_x: bool,
-            m: ipopt::ipindex,
-            nele_jac: ipopt::ipindex,
-            iRow: *mut ipopt::ipindex,
-            jCol: *mut ipopt::ipindex,
-            values: *mut ipopt::ipnumber,
-            user_data: ipopt::UserDataPtr,
+            m: ipindex,
+            nele_jac: ipindex,
+            iRow: *mut ipindex,
+            jCol: *mut ipindex,
+            values: *mut ipnumber,
+            user_data: UserDataPtr,
         ) -> bool {
-
             // Throw away unused variables
             let _ = user_data;
             let _ = new_x;
             let _ = m;
-        
-            if values.is_null() {
 
+            if values.is_null() {
                 assert!(x.is_null());
                 assert!(values.is_null());
 
                 assert!(!iRow.is_null());
                 assert!(!jCol.is_null());
-        
-                let i_row_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(iRow, nele_jac.try_into().unwrap())};
-                let j_col_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(jCol, nele_jac.try_into().unwrap())};
-        
+
+                let i_row_slice: &mut [ipindex] =
+                    unsafe { core::slice::from_raw_parts_mut(iRow, nele_jac.try_into().unwrap()) };
+                let j_col_slice: &mut [ipindex] =
+                    unsafe { core::slice::from_raw_parts_mut(jCol, nele_jac.try_into().unwrap()) };
+
                 assert!(i_row_slice.len() == nele_jac.try_into().unwrap());
                 assert!(j_col_slice.len() == nele_jac.try_into().unwrap());
-                
-                nlp::jacobian_constraint_elements(i_row_slice, j_col_slice);
-            } 
-            
-            else {
-        
+
+                jacobian_constraint_elements(i_row_slice, j_col_slice);
+            } else {
                 assert!(!x.is_null());
                 assert!(!values.is_null());
 
                 assert!(iRow.is_null());
                 assert!(jCol.is_null());
-                
-                let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
-                let values_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(values, nele_jac.try_into().unwrap())};
+
+                let x_slice: &[ipnumber] =
+                    unsafe { core::slice::from_raw_parts_mut(x, n.try_into().unwrap()) };
+                let values_slice: &mut [ipnumber] = unsafe {
+                    core::slice::from_raw_parts_mut(values, nele_jac.try_into().unwrap())
+                };
 
                 assert!(x_slice.len() == n.try_into().unwrap());
                 assert!(values_slice.len() == nele_jac.try_into().unwrap());
-           
-                nlp::jacobian_constraint_function(x_slice, values_slice);        
+
+                jacobian_constraint_function(x_slice, values_slice);
             }
-        
+
             true
         }
 
         /// Implementation of callback function for evaluating the Hessian of the Lagrangian function.
-        /// 
+        ///
         /// This function converts the Hessian of the Lagrangian function definition into something that IPOPT understands.
         #[unsafe(no_mangle)]
-        pub extern "C" fn eval_h(
-            n: ipopt::ipindex,
-            x: *mut ipopt::ipnumber,
+        pub(crate) extern "C" fn eval_h(
+            n: ipindex,
+            x: *mut ipnumber,
             new_x: bool,
-            obj_factor: ipopt::ipnumber,
-            m: ipopt::ipindex,
-            lambda: *mut ipopt::ipnumber,
+            obj_factor: ipnumber,
+            m: ipindex,
+            lambda: *mut ipnumber,
             new_lambda: bool,
-            nele_hess: ipopt::ipindex,
-            iRow: *mut ipopt::ipindex,
-            jCol: *mut ipopt::ipindex,
-            values: *mut ipopt::ipnumber,
-            user_data: ipopt::UserDataPtr,
+            nele_hess: ipindex,
+            iRow: *mut ipindex,
+            jCol: *mut ipindex,
+            values: *mut ipnumber,
+            user_data: UserDataPtr,
         ) -> bool {
-            
             // These variables are not yet used
             let _ = new_x;
             let _ = new_lambda;
             let _ = user_data;
-            
+
             if values.is_null() {
-        
                 assert!(x.is_null());
                 assert!(values.is_null());
-                
+
                 assert!(!lambda.is_null());
                 assert!(!iRow.is_null());
                 assert!(!jCol.is_null());
 
-                let i_row_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(iRow, nele_hess.try_into().unwrap())};
-                let j_col_slice: &mut[ipopt::ipindex] = unsafe {core::slice::from_raw_parts_mut(jCol, nele_hess.try_into().unwrap())};
-        
+                let i_row_slice: &mut [ipindex] =
+                    unsafe { core::slice::from_raw_parts_mut(iRow, nele_hess.try_into().unwrap()) };
+                let j_col_slice: &mut [ipindex] =
+                    unsafe { core::slice::from_raw_parts_mut(jCol, nele_hess.try_into().unwrap()) };
+
                 assert!(i_row_slice.len() == nele_hess.try_into().unwrap());
                 assert!(j_col_slice.len() == nele_hess.try_into().unwrap());
-                
-                nlp::hessian_elements(i_row_slice, j_col_slice);        
-            }
-        
-            else {
-        
+
+                hessian_elements(i_row_slice, j_col_slice);
+            } else {
                 assert!(!x.is_null());
                 assert!(!values.is_null());
                 assert!(!lambda.is_null());
-                
+
                 assert!(iRow.is_null());
                 assert!(jCol.is_null());
-                
-                let x_slice: &[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(x, n.try_into().unwrap())};
-                let values_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(values, nele_hess.try_into().unwrap())};
-                let lambda_slice: &mut[ipopt::ipnumber] = unsafe {core::slice::from_raw_parts_mut(lambda, m.try_into().unwrap())};
+
+                let x_slice: &[ipnumber] =
+                    unsafe { core::slice::from_raw_parts_mut(x, n.try_into().unwrap()) };
+                let values_slice: &mut [ipnumber] = unsafe {
+                    core::slice::from_raw_parts_mut(values, nele_hess.try_into().unwrap())
+                };
+                let lambda_slice: &mut [ipnumber] =
+                    unsafe { core::slice::from_raw_parts_mut(lambda, m.try_into().unwrap()) };
 
                 assert!(x_slice.len() == n.try_into().unwrap());
                 assert!(values_slice.len() == nele_hess.try_into().unwrap());
                 assert!(lambda_slice.len() == m.try_into().unwrap());
-           
-                nlp::hessian_lagrangian_function(x_slice, lambda_slice, obj_factor, values_slice); 
+
+                hessian_lagrangian_function(x_slice, lambda_slice, obj_factor, values_slice);
             }
-            
+
             true
         }
     }
