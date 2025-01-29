@@ -1,6 +1,7 @@
 mod nlp;
 mod bindings {
-    pub mod ipopt;
+    pub(crate) mod ipopt;
+    pub(crate) mod blas;
 }
 mod ocp;
 
@@ -52,7 +53,7 @@ struct Ipopt {
 
 fn main() {
     let config_file: String =
-        fs::read_to_string("settings.toml").expect("Unable to read configuration file");
+        fs::read_to_string("Settings.toml").expect("Unable to read configuration file");
 
     let mut config_data: Config = toml::from_str(&config_file).unwrap();
 
