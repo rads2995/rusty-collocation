@@ -3,7 +3,9 @@ mod bindings {
     pub(crate) mod ipopt;
     pub(crate) mod blas;
 }
-mod ocp;
+mod math {
+    pub(crate) mod gaussian_quadrature;
+}
 
 use bindings::ipopt::ipopt_ffi::{
     ipnumber,
@@ -24,9 +26,6 @@ use bindings::ipopt::ipopt_ffi::helper::{
     eval_grad_f,
     eval_jac_g,
     eval_h,
-};
-use ocp::bolza::{
-    legendre_polynomial,
 };
 
 use serde::Deserialize;

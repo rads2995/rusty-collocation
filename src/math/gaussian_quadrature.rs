@@ -1,4 +1,4 @@
-pub(crate) mod bolza {
+pub(crate) mod gauss_legendre {
     
     /// Rodrigues's Formula
     pub(crate) fn legendre_polynomial(l: usize, x: f64) -> f64 {
@@ -38,7 +38,4 @@ pub(crate) mod bolza {
 
         }
     }
-
-    // Guass-Radau Quadrature
-
 }
