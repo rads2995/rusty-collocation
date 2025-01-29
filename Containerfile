@@ -12,8 +12,7 @@ RUN apt-get install -y \
     pkg-config \
     liblapack-dev \
     libmetis-dev \
-    make \
-    cmake
+    make
 
 # Build MUMPS
 WORKDIR /usr/local/src
@@ -21,7 +20,8 @@ RUN git clone https://github.com/coin-or-tools/ThirdParty-Mumps.git
 WORKDIR /usr/local/src/ThirdParty-Mumps
 RUN ./get.Mumps
 RUN mkdir build
-RUN ./configure
+WORKDIR /usr/local/src/ThirdParty-Mumps/build
+RUN ../configure
 RUN make -j6
 RUN make -j6 install
 
@@ -30,7 +30,8 @@ WORKDIR /usr/local/src
 RUN git clone https://github.com/coin-or/Ipopt.git
 WORKDIR /usr/local/src/Ipopt
 RUN mkdir build
-RUN ./configure
+WORKDIR /usr/local/src/Ipopt/build
+RUN ../configure
 RUN make -j6
 RUN make -j6 test
 RUN make -j6 install
