@@ -1,31 +1,17 @@
-mod nlp;
+pub(crate) mod nlp;
 mod bindings {
-    pub(crate) mod ipopt;
     pub(crate) mod blas;
+    pub(crate) mod ipopt;
 }
 mod math {
     pub(crate) mod gaussian_quadrature;
 }
 
-use bindings::ipopt::ipopt_ffi::{
-    ipnumber,
-    ipindex,
-    IpoptProblemInfo,
-    IpoptProblem,
-    ApplicationReturnStatus,
-    IpoptReturnStatus,
-    CreateIpoptProblem,
-    AddIpoptNumOption,
-    AddIpoptStrOption,
+use bindings::ipopt::helper::{eval_f, eval_g, eval_grad_f, eval_h, eval_jac_g};
+use bindings::ipopt::{
+    ipindex, ipnumber, AddIpoptNumOption, AddIpoptStrOption, ApplicationReturnStatus,
+    CreateIpoptProblem, FreeIpoptProblem, IpoptProblem, IpoptProblemInfo, IpoptReturnStatus,
     IpoptSolve,
-    FreeIpoptProblem,
-};
-use bindings::ipopt::ipopt_ffi::helper::{
-    eval_f,
-    eval_g,
-    eval_grad_f,
-    eval_jac_g,
-    eval_h,
 };
 
 use serde::Deserialize;

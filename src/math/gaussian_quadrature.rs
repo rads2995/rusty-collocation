@@ -1,26 +1,24 @@
 pub(crate) mod gauss_legendre {
-    
+
     /// Rodrigues's Formula
     pub(crate) fn legendre_polynomial(l: usize, x: f64) -> f64 {
         if x.is_nan() {
             f64::NAN
-        }
-
-        else if x == 1.0 {
+        } else if x == 1.0 {
             1.0
-        }
-
-        else if x == -1.0 {
-            if l % 2 == 1 { -1.0 } else { 1.0 }
-        }
-
-        else {
-            let mut p_lm2 = 1.0;    // P_0(x)
+        } else if x == -1.0 {
+            if l % 2 == 1 {
+                -1.0
+            } else {
+                1.0
+            }
+        } else {
+            let mut p_lm2 = 1.0; // P_0(x)
             if l == 0 {
                 return p_lm2;
             }
 
-            let mut p_lm1 = x;  // P_1(x)
+            let mut p_lm1 = x; // P_1(x)
 
             if l == 1 {
                 return p_lm1;
@@ -35,7 +33,6 @@ pub(crate) mod gauss_legendre {
             }
 
             return p_l;
-
         }
     }
 }
