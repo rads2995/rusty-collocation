@@ -6,3 +6,6 @@ edition = "2021"
 [dependencies]
 serde = { version = "1.0.217", features = ["derive"] }
 toml = "0.8.19"
+
+[build-dependencies]
+cc = { version = "1.2.13" }
