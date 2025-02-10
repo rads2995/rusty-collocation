@@ -2,6 +2,7 @@ pub(crate) mod nlp;
 mod bindings {
     pub(crate) mod blas;
     pub(crate) mod ipopt;
+    pub(crate) mod lua;
 }
 mod math {
     pub(crate) mod gaussian_quadrature;
