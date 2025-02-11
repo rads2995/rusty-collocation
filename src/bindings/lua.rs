@@ -32,15 +32,6 @@ pub(crate) struct lua_State {
     _marker: core::marker::PhantomData<(*mut u8, core::marker::PhantomPinned)>,
 }
 
-impl lua_State {
-    pub(crate) fn default() -> Self {
-        lua_State {
-            _data: [],
-            _marker: core::marker::PhantomData,
-        }
-    }
-}
-
 #[repr(C)]
 pub(crate) struct luaL_Reg {
     pub name: *const core::ffi::c_char,

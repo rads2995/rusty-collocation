@@ -13,6 +13,47 @@ use bindings::ipopt::{
 };
 
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    for arg in args.iter().skip(1) {
+        match arg.as_str() {
+            "-i" | "--interactive" => {
+                println!("[INFO] Running in interactive mode.");
+                unsafe {
+                    // Lua shenanigans
+                    let lua_state: *mut bindings::lua::lua_State = bindings::lua::luaL_newstate();
+                    if lua_state.is_null() {
+                        panic!("Failed to create Lua state!");
+                    }
+
+                    bindings::lua::luaL_openlibs(lua_state);
+
+                    let script: std::ffi::CString = std::ffi::CString::new("return 42").unwrap();
+                    bindings::lua::luaL_loadstring(lua_state, script.as_ptr());
+
+                    bindings::lua::lua_pcallk(lua_state, 0, 1, 0, 0, None);
+
+                    let mut len: usize = 0;
+
+                    let str_ptr: *const i8 = bindings::lua::luaL_tolstring(lua_state, -1, &mut len);
+
+                    let c_str: &std::ffi::CStr = std::ffi::CStr::from_ptr(str_ptr);
+
+                    let rust_str: String = c_str.to_string_lossy().into_owned();
+
+                    dbg!(rust_str);
+
+                    bindings::lua::lua_settop(lua_state, 1);
+
+                    bindings::lua::lua_close(lua_state);
+                }
+                return;
+            }
+            _ => {
+                println!("[WARNING] Unknown argument passed \"{}\", ignoring.", arg);
+            }
+        }
+    }
+
     let mut x_l: Vec<f64> = std::vec!(1.0, 1.0, 1.0, 1.0);
     let mut x_u: Vec<f64> = std::vec!(5.0, 5.0, 5.0, 5.0);
     let mut g_l: Vec<f64> = std::vec!(25.0, 40.0);
@@ -97,33 +138,5 @@ fn main() {
         }
 
         FreeIpoptProblem(nlp);
-
-        // Lua shenanigans
-        let lua_state: *mut bindings::lua::lua_State = bindings::lua::luaL_newstate();
-
-        if lua_state.is_null() {
-            panic!("Failed to create Lua state!");
-        }
-
-        bindings::lua::luaL_openlibs(lua_state);
-
-        let script: std::ffi::CString = std::ffi::CString::new("return 42").unwrap();
-        bindings::lua::luaL_loadstring(lua_state, script.as_ptr());
-
-        bindings::lua::lua_pcallk(lua_state, 0, 1, 0, 0, None);
-
-        let mut len: usize = 0;
-
-        let str_ptr: *const i8 = bindings::lua::luaL_tolstring(lua_state, -1, &mut len);
-
-        let c_str: &std::ffi::CStr = std::ffi::CStr::from_ptr(str_ptr);
-
-        let rust_str: String = c_str.to_string_lossy().into_owned();
-
-        dbg!(rust_str);
-
-        bindings::lua::lua_settop(lua_state, 1);
-
-        bindings::lua::lua_close(lua_state);
     }
 }
