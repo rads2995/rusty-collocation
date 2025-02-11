@@ -1,4 +1,4 @@
-#![allow(non_camel_case_types, unused)]
+#![allow(non_camel_case_types, non_snake_case, unused)]
 
 #[repr(C)]
 pub(crate) struct lua_Debug {
@@ -28,7 +28,42 @@ pub(crate) struct CallInfo {
 
 #[repr(C)]
 pub(crate) struct lua_State {
-    _unused: [u8; 0],
+    _data: [u8; 0],
+    _marker: core::marker::PhantomData<(*mut u8, core::marker::PhantomPinned)>,
+}
+
+impl lua_State {
+    pub(crate) fn default() -> Self {
+        lua_State {
+            _data: [],
+            _marker: core::marker::PhantomData,
+        }
+    }
+}
+
+#[repr(C)]
+pub(crate) struct luaL_Reg {
+    pub name: *const core::ffi::c_char,
+    pub func: lua_CFunction,
+}
+
+#[repr(C)]
+pub(crate) struct luaL_Buffer {
+    pub b: *mut core::ffi::c_char,
+    pub size: usize,
+    pub n: usize,
+    pub L: *mut lua_State,
+    pub init: luaL_Buffer__bindgen_ty_1,
+}
+
+#[repr(C)]
+pub(crate) union luaL_Buffer__bindgen_ty_1 {
+    pub n: lua_Number,
+    pub u: f64,
+    pub s: *mut core::ffi::c_void,
+    pub i: lua_Integer,
+    pub l: core::ffi::c_long,
+    pub b: [core::ffi::c_char; 1024usize],
 }
 
 pub(crate) type lua_Number = core::ffi::c_double;
@@ -497,4 +532,241 @@ unsafe extern "C" {
         L: *mut lua_State,
         limit: core::ffi::c_uint,
     ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaopen_base(L: *mut lua_State) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaopen_coroutine(L: *mut lua_State) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaopen_table(L: *mut lua_State) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaopen_io(L: *mut lua_State) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaopen_os(L: *mut lua_State) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaopen_string(L: *mut lua_State) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaopen_utf8(L: *mut lua_State) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaopen_math(L: *mut lua_State) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaopen_debug(L: *mut lua_State) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaopen_package(L: *mut lua_State) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_openlibs(L: *mut lua_State);
+
+    pub(crate) unsafe fn luaL_checkversion_(L: *mut lua_State, ver: lua_Number, sz: usize);
+
+    pub(crate) unsafe fn luaL_getmetafield(
+        L: *mut lua_State,
+        obj: core::ffi::c_int,
+        e: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_callmeta(
+        L: *mut lua_State,
+        obj: core::ffi::c_int,
+        e: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_tolstring(
+        L: *mut lua_State,
+        idx: core::ffi::c_int,
+        len: *mut usize,
+    ) -> *const core::ffi::c_char;
+
+    pub(crate) unsafe fn luaL_argerror(
+        L: *mut lua_State,
+        arg: core::ffi::c_int,
+        extramsg: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_typeerror(
+        L: *mut lua_State,
+        arg: core::ffi::c_int,
+        tname: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_checklstring(
+        L: *mut lua_State,
+        arg: core::ffi::c_int,
+        l: *mut usize,
+    ) -> *const core::ffi::c_char;
+
+    pub(crate) unsafe fn luaL_optlstring(
+        L: *mut lua_State,
+        arg: core::ffi::c_int,
+        def: *const core::ffi::c_char,
+        l: *mut usize,
+    ) -> *const core::ffi::c_char;
+
+    pub(crate) unsafe fn luaL_checknumber(L: *mut lua_State, arg: core::ffi::c_int) -> lua_Number;
+
+    pub(crate) unsafe fn luaL_optnumber(
+        L: *mut lua_State,
+        arg: core::ffi::c_int,
+        def: lua_Number,
+    ) -> lua_Number;
+
+    pub(crate) unsafe fn luaL_checkinteger(L: *mut lua_State, arg: core::ffi::c_int)
+        -> lua_Integer;
+
+    pub(crate) unsafe fn luaL_optinteger(
+        L: *mut lua_State,
+        arg: core::ffi::c_int,
+        def: lua_Integer,
+    ) -> lua_Integer;
+
+    pub(crate) unsafe fn luaL_checkstack(
+        L: *mut lua_State,
+        sz: core::ffi::c_int,
+        msg: *const core::ffi::c_char,
+    );
+
+    pub(crate) unsafe fn luaL_checktype(
+        L: *mut lua_State,
+        arg: core::ffi::c_int,
+        t: core::ffi::c_int,
+    );
+
+    pub(crate) unsafe fn luaL_checkany(L: *mut lua_State, arg: core::ffi::c_int);
+
+    pub(crate) unsafe fn luaL_newmetatable(
+        L: *mut lua_State,
+        tname: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_setmetatable(L: *mut lua_State, tname: *const core::ffi::c_char);
+
+    pub(crate) unsafe fn luaL_testudata(
+        L: *mut lua_State,
+        ud: core::ffi::c_int,
+        tname: *const core::ffi::c_char,
+    ) -> *mut core::ffi::c_void;
+
+    pub(crate) unsafe fn luaL_checkudata(
+        L: *mut lua_State,
+        ud: core::ffi::c_int,
+        tname: *const core::ffi::c_char,
+    ) -> *mut core::ffi::c_void;
+
+    pub(crate) unsafe fn luaL_where(L: *mut lua_State, lvl: core::ffi::c_int);
+
+    pub(crate) unsafe fn luaL_error(
+        L: *mut lua_State,
+        fmt: *const core::ffi::c_char,
+        ...
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_checkoption(
+        L: *mut lua_State,
+        arg: core::ffi::c_int,
+        def: *const core::ffi::c_char,
+        lst: *const *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_fileresult(
+        L: *mut lua_State,
+        stat: core::ffi::c_int,
+        fname: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_execresult(
+        L: *mut lua_State,
+        stat: core::ffi::c_int,
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_ref(L: *mut lua_State, t: core::ffi::c_int) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_unref(L: *mut lua_State, t: core::ffi::c_int, ref_: core::ffi::c_int);
+
+    pub(crate) unsafe fn luaL_loadfilex(
+        L: *mut lua_State,
+        filename: *const core::ffi::c_char,
+        mode: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_loadbufferx(
+        L: *mut lua_State,
+        buff: *const core::ffi::c_char,
+        sz: usize,
+        name: *const core::ffi::c_char,
+        mode: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_loadstring(
+        L: *mut lua_State,
+        s: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_newstate() -> *mut lua_State;
+
+    pub(crate) unsafe fn luaL_len(L: *mut lua_State, idx: core::ffi::c_int) -> lua_Integer;
+
+    pub(crate) unsafe fn luaL_addgsub(
+        b: *mut luaL_Buffer,
+        s: *const core::ffi::c_char,
+        p: *const core::ffi::c_char,
+        r: *const core::ffi::c_char,
+    );
+
+    pub(crate) unsafe fn luaL_gsub(
+        L: *mut lua_State,
+        s: *const core::ffi::c_char,
+        p: *const core::ffi::c_char,
+        r: *const core::ffi::c_char,
+    ) -> *const core::ffi::c_char;
+
+    pub(crate) unsafe fn luaL_setfuncs(
+        L: *mut lua_State,
+        l: *const luaL_Reg,
+        nup: core::ffi::c_int,
+    );
+
+    pub(crate) unsafe fn luaL_getsubtable(
+        L: *mut lua_State,
+        idx: core::ffi::c_int,
+        fname: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+
+    pub(crate) unsafe fn luaL_traceback(
+        L: *mut lua_State,
+        L1: *mut lua_State,
+        msg: *const core::ffi::c_char,
+        level: core::ffi::c_int,
+    );
+
+    pub(crate) unsafe fn luaL_requiref(
+        L: *mut lua_State,
+        modname: *const core::ffi::c_char,
+        openf: lua_CFunction,
+        glb: core::ffi::c_int,
+    );
+
+    pub(crate) unsafe fn luaL_buffinit(L: *mut lua_State, B: *mut luaL_Buffer);
+
+    pub(crate) unsafe fn luaL_prepbuffsize(
+        B: *mut luaL_Buffer,
+        sz: usize,
+    ) -> *mut core::ffi::c_char;
+
+    pub(crate) unsafe fn luaL_addlstring(
+        B: *mut luaL_Buffer,
+        s: *const core::ffi::c_char,
+        l: usize,
+    );
+
+    pub(crate) unsafe fn luaL_addstring(B: *mut luaL_Buffer, s: *const core::ffi::c_char);
+
+    pub(crate) unsafe fn luaL_addvalue(B: *mut luaL_Buffer);
+
+    pub(crate) unsafe fn luaL_pushresult(B: *mut luaL_Buffer);
+
+    pub(crate) unsafe fn luaL_pushresultsize(B: *mut luaL_Buffer, sz: usize);
+
+    pub(crate) unsafe fn luaL_buffinitsize(
+        L: *mut lua_State,
+        B: *mut luaL_Buffer,
+        sz: usize,
+    ) -> *mut core::ffi::c_char;
 }
