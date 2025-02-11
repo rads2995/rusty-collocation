@@ -95,7 +95,7 @@ impl core::convert::TryFrom<ApplicationReturnStatus> for IpoptReturnStatus {
 /// Return value should be set to false if there was a problem doing the evaluation.
 ///
 /// See also `Ipopt::TNLP::eval_f`.
-type Eval_F_CB = core::option::Option<
+pub(crate) type Eval_F_CB = core::option::Option<
     unsafe extern "C" fn(
         n: ipindex,
         x: *mut ipnumber,
@@ -110,7 +110,7 @@ type Eval_F_CB = core::option::Option<
 /// Return value should be set to false if there was a problem doing the evaluation.
 ///
 /// See also `Ipopt::TNLP::eval_grad_f`.
-type Eval_Grad_F_CB = core::option::Option<
+pub(crate) type Eval_Grad_F_CB = core::option::Option<
     unsafe extern "C" fn(
         n: ipindex,
         x: *mut ipnumber,
@@ -125,7 +125,7 @@ type Eval_Grad_F_CB = core::option::Option<
 /// Return value should be set to false if there was a problem doing the evaluation.
 ///
 /// See also `Ipopt::TNLP::eval_g`.
-type Eval_G_CB = core::option::Option<
+pub(crate) type Eval_G_CB = core::option::Option<
     unsafe extern "C" fn(
         n: ipindex,
         x: *mut ipnumber,
@@ -141,7 +141,7 @@ type Eval_G_CB = core::option::Option<
 /// Return value should be set to false if there was a problem doing the evaluation.
 ///
 /// See also `Ipopt::TNLP::eval_jac_g`.
-type Eval_Jac_G_CB = core::option::Option<
+pub(crate) type Eval_Jac_G_CB = core::option::Option<
     unsafe extern "C" fn(
         n: ipindex,
         x: *mut ipnumber,
@@ -160,7 +160,7 @@ type Eval_Jac_G_CB = core::option::Option<
 /// Return value should be set to false if there was a problem doing the evaluation.
 ///
 /// See also `Ipopt::TNLP::eval_h`.
-type Eval_H_CB = core::option::Option<
+pub(crate) type Eval_H_CB = core::option::Option<
     unsafe extern "C" fn(
         n: ipindex,
         x: *mut ipnumber,
@@ -186,7 +186,7 @@ type Eval_H_CB = core::option::Option<
 /// If this method returns false, Ipopt will terminate the optimization.
 ///
 /// See also `Ipopt::TNLP::intermediate_callback`.
-type Intermediate_CB = core::option::Option<
+pub(crate) type Intermediate_CB = core::option::Option<
     unsafe extern "C" fn(
         alg_mod: ipindex,
         iter_count: ipindex,

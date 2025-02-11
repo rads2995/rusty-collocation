@@ -1724,7 +1724,7 @@ unsafe extern "C" {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use super::*;
+    use super::cblas_sdsdot;
 
     #[test]
     fn test_cblas_sdsdot() {
