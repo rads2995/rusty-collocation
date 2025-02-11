@@ -5,6 +5,8 @@ mod bindings {
     pub(crate) mod lua;
 }
 
+use std::io::Write;
+
 use bindings::ipopt::helper::{eval_f, eval_g, eval_grad_f, eval_h, eval_jac_g};
 use bindings::ipopt::{
     ipindex, ipnumber, AddIpoptNumOption, AddIpoptStrOption, ApplicationReturnStatus,
@@ -18,6 +20,7 @@ fn main() {
         match arg.as_str() {
             "-i" | "--interactive" => {
                 println!("[INFO] Running in interactive mode.");
+                let mut input: String = String::new();
                 unsafe {
                     // Lua shenanigans
                     let lua_state: *mut bindings::lua::lua_State = bindings::lua::luaL_newstate();
@@ -27,22 +30,34 @@ fn main() {
 
                     bindings::lua::luaL_openlibs(lua_state);
 
-                    let script: std::ffi::CString = std::ffi::CString::new("return 42").unwrap();
-                    bindings::lua::luaL_loadstring(lua_state, script.as_ptr());
+                    loop {
+                        print!(">> ");
+                        std::io::stdout().flush().unwrap();
+                        std::io::stdin().read_line(&mut input).unwrap();
+                        let input: &str = input.trim();
 
-                    bindings::lua::lua_pcallk(lua_state, 0, 1, 0, 0, None);
+                        let script: std::ffi::CString =
+                            std::ffi::CString::new(input.as_bytes()).unwrap();
 
-                    let mut len: usize = 0;
+                        bindings::lua::luaL_loadstring(lua_state, script.as_ptr());
 
-                    let str_ptr: *const i8 = bindings::lua::luaL_tolstring(lua_state, -1, &mut len);
+                        bindings::lua::lua_pcallk(lua_state, 0, 1, 0, 0, None);
 
-                    let c_str: &std::ffi::CStr = std::ffi::CStr::from_ptr(str_ptr);
+                        let mut len: usize = 0;
 
-                    let rust_str: String = c_str.to_string_lossy().into_owned();
+                        let str_ptr: *const i8 =
+                            bindings::lua::luaL_tolstring(lua_state, -1, &mut len);
 
-                    dbg!(rust_str);
+                        let c_str: &std::ffi::CStr = std::ffi::CStr::from_ptr(str_ptr);
 
-                    bindings::lua::lua_settop(lua_state, 1);
+                        let rust_str: String = c_str.to_string_lossy().into_owned();
+
+                        dbg!(rust_str);
+
+                        bindings::lua::lua_settop(lua_state, 1);
+
+                        break;
+                    }
 
                     bindings::lua::lua_close(lua_state);
                 }
